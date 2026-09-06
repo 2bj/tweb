@@ -417,9 +417,11 @@
     flex: 1 1 auto;
 
     .chatlist-scroll-controls {
+      --chatlist-fab-offset: 1.25rem;
+      --chatlist-fab-size: 54px;
       position: absolute;
-      inset-inline-end: 0.75rem;
-      top: calc(var(--chatlist-overlay-height, 0px) + 0.5rem);
+      bottom: var(--chatlist-fab-offset);
+      inset-inline-end: calc(var(--chatlist-fab-offset) + var(--chatlist-fab-size) + 0.5rem);
       z-index: 2;
       display: none;
       flex-direction: row;
@@ -455,7 +457,8 @@
 
     @include respond-to(handhelds) {
       .chatlist-scroll-controls {
-        inset-inline-end: 14px;
+        --chatlist-fab-offset: 14px;
+        --chatlist-fab-size: 54px;
       }
     }
 
