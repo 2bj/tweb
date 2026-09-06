@@ -31,6 +31,7 @@ vi.mock('@lib/langPack', () => ({
 import {
   applyChatListScrollAccessibility,
   handleChatListScrollKeydown,
+  relocateChatListScrollControls,
   scrollChatListContainer
 } from '@helpers/accessibility';
 
@@ -59,6 +60,7 @@ describe('chat list scroll accessibility', () => {
   });
 
   it('makes the scroll container focusable and adds visible named scroll controls', () => {
+    host.id = 'folders-container';
     const destroy = applyChatListScrollAccessibility(container);
 
     expect(container.tabIndex).toBe(0);
@@ -81,12 +83,83 @@ describe('chat list scroll accessibility', () => {
     expect(upButton.querySelector('[data-icon="arrow_up"]')).not.toBeNull();
     expect(downButton.querySelector('[data-icon="arrow_down"]')).not.toBeNull();
     expect(container.contains(controls)).toBe(false);
+    expect(container.nextElementSibling).toBe(controls);
     expect(host.contains(controls)).toBe(true);
 
     destroy();
 
     expect(container.hasAttribute('tabindex')).toBe(false);
     expect(host.querySelector('.chatlist-scroll-controls')).toBeNull();
+  });
+
+  it('relocates scroll controls beside the folder after a deferred mount', async() => {
+    host.id = 'folders-container';
+    container.remove();
+
+    const destroy = applyChatListScrollAccessibility(container);
+    expect(container.querySelector('.chatlist-scroll-controls')).not.toBeNull();
+    expect(container.nextElementSibling?.classList.contains('chatlist-scroll-controls') ?? false).toBe(false);
+
+    host.append(container);
+
+    await Promise.resolve();
+
+    const controls = host.querySelector('.chatlist-scroll-controls');
+    expect(controls).not.toBeNull();
+    expect(container.contains(controls)).toBe(false);
+    expect(container.nextElementSibling).toBe(controls);
+
+    destroy();
+  });
+
+  it('mounts each folder controls as the immediate next sibling inside folders-container', async() => {
+    host.id = 'folders-container';
+
+    const inactiveContainer = document.createElement('div');
+    inactiveContainer.className = 'folders-scrollable';
+    host.prepend(inactiveContainer);
+
+    applyChatListScrollAccessibility(inactiveContainer);
+
+    const detachedContainer = document.createElement('div');
+    detachedContainer.className = 'folders-scrollable active';
+    applyChatListScrollAccessibility(detachedContainer);
+    host.append(detachedContainer);
+
+    await Promise.resolve();
+
+    const inactiveControls = inactiveContainer.nextElementSibling as HTMLElement;
+    const activeControls = detachedContainer.nextElementSibling as HTMLElement;
+
+    expect(inactiveControls?.classList.contains('chatlist-scroll-controls')).toBe(true);
+    expect(activeControls?.classList.contains('chatlist-scroll-controls')).toBe(true);
+    expect(inactiveControls?.previousElementSibling).toBe(inactiveContainer);
+    expect(activeControls?.previousElementSibling).toBe(detachedContainer);
+    expect(inactiveContainer.contains(inactiveControls)).toBe(false);
+    expect(detachedContainer.contains(activeControls)).toBe(false);
+  });
+
+  it('keeps controls beside their folder after the folder is reordered', () => {
+    host.id = 'folders-container';
+
+    const folderA = document.createElement('div');
+    folderA.className = 'folders-scrollable';
+    const folderB = document.createElement('div');
+    folderB.className = 'folders-scrollable active';
+
+    host.append(folderA, folderB);
+    applyChatListScrollAccessibility(folderA);
+    applyChatListScrollAccessibility(folderB);
+
+    const controlsA = folderA.nextElementSibling as HTMLElement;
+    const controlsB = folderB.nextElementSibling as HTMLElement;
+
+    host.insertBefore(folderB, folderA);
+    relocateChatListScrollControls(folderA);
+    relocateChatListScrollControls(folderB);
+
+    expect(folderA.nextElementSibling).toBe(controlsA);
+    expect(folderB.nextElementSibling).toBe(controlsB);
   });
 
   it('scrolls by roughly one viewport on PageUp and PageDown when focused', () => {

@@ -126,7 +126,8 @@ import {toastNew} from '@components/toast';
 import {
   applyChatListAccessibility,
   applyChatNavigationLandmark,
-  refreshDialogRowAccessibility
+  refreshDialogRowAccessibility,
+  relocateChatListScrollControls
 } from '@helpers/accessibility';
 
 
@@ -1210,6 +1211,7 @@ export class AppDialogsManager {
         this.xds[filterId].setIndexKey(indexKey);
 
         positionElementByIndex(renderedFilter.container, this.folders.container, filter.localId);
+        relocateChatListScrollControls(renderedFilter.container);
       });
     });
   }
@@ -1501,6 +1503,7 @@ export class AppDialogsManager {
     const renderedFilter = this.filtersRendered[id];
     if(renderedFilter) {
       positionElementByIndex(renderedFilter.container, this.folders.container, filter.localId);
+      relocateChatListScrollControls(renderedFilter.container);
       return;
     }
 
@@ -1525,6 +1528,7 @@ export class AppDialogsManager {
     const div = scrollable.container;
     // this.folders.container.append(div);
     positionElementByIndex(scrollable.container, this.folders.container, filter.localId);
+    relocateChatListScrollControls(scrollable.container);
 
     this.filtersRendered[id] = {
       id,
