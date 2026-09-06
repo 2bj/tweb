@@ -4,6 +4,19 @@ vi.mock('@components/wrappers/getPeerTitle', () => ({
   default: vi.fn()
 }));
 
+vi.mock('@components/icon', () => ({
+  default: (icon: string) => {
+    const span = document.createElement('span');
+    span.className = 'tgico';
+    span.dataset.icon = icon;
+    return span;
+  }
+}));
+
+vi.mock('@components/ripple', () => ({
+  default: vi.fn()
+}));
+
 vi.mock('@lib/langPack', () => ({
   default: {
     format: (key: string, plain?: boolean) => (plain ? key : key)
@@ -29,32 +42,51 @@ function pressKey(element: HTMLElement, key: string) {
 
 describe('chat list scroll accessibility', () => {
   let container: HTMLDivElement;
+  let host: HTMLDivElement;
 
   beforeEach(() => {
+    host = document.createElement('div');
+    host.className = 'folders-container';
+
     container = document.createElement('div');
+    container.className = 'folders-scrollable active';
     Object.defineProperty(container, 'clientHeight', {value: 200, configurable: true});
     Object.defineProperty(container, 'scrollHeight', {value: 1000, configurable: true});
     container.scrollTop = 100;
-    document.body.append(container);
+
+    host.append(container);
+    document.body.append(host);
   });
 
-  it('makes the scroll container focusable and adds named scroll controls', () => {
+  it('makes the scroll container focusable and adds visible named scroll controls', () => {
     const destroy = applyChatListScrollAccessibility(container);
 
     expect(container.tabIndex).toBe(0);
 
-    const upButton = container.querySelector('.chatlist-scroll-control-up') as HTMLButtonElement;
-    const downButton = container.querySelector('.chatlist-scroll-control-down') as HTMLButtonElement;
+    const controls = host.querySelector('.chatlist-scroll-controls');
+    const upButton = host.querySelector('.chatlist-scroll-button-up') as HTMLButtonElement;
+    const downButton = host.querySelector('.chatlist-scroll-button-down') as HTMLButtonElement;
 
+    expect(controls).not.toBeNull();
+    expect(controls?.getAttribute('aria-hidden')).toBeNull();
     expect(upButton).not.toBeNull();
     expect(downButton).not.toBeNull();
+    expect(upButton.getAttribute('aria-hidden')).toBeNull();
+    expect(downButton.getAttribute('aria-hidden')).toBeNull();
     expect(upButton.getAttribute('aria-label')).toBe('ScrollChatsUp');
     expect(downButton.getAttribute('aria-label')).toBe('ScrollChatsDown');
+    expect(upButton.classList.contains('btn-circle')).toBe(true);
+    expect(upButton.classList.contains('chatlist-scroll-control')).toBe(false);
+    expect(downButton.classList.contains('chatlist-scroll-control')).toBe(false);
+    expect(upButton.querySelector('[data-icon="arrow_up"]')).not.toBeNull();
+    expect(downButton.querySelector('[data-icon="arrow_down"]')).not.toBeNull();
+    expect(container.contains(controls)).toBe(false);
+    expect(host.contains(controls)).toBe(true);
 
     destroy();
 
     expect(container.hasAttribute('tabindex')).toBe(false);
-    expect(container.querySelector('.chatlist-scroll-controls')).toBeNull();
+    expect(host.querySelector('.chatlist-scroll-controls')).toBeNull();
   });
 
   it('scrolls by roughly one viewport on PageUp and PageDown when focused', () => {
@@ -97,8 +129,8 @@ describe('chat list scroll accessibility', () => {
   it('scrolls when voice-control buttons are clicked', () => {
     applyChatListScrollAccessibility(container);
 
-    const upButton = container.querySelector('.chatlist-scroll-control-up') as HTMLButtonElement;
-    const downButton = container.querySelector('.chatlist-scroll-control-down') as HTMLButtonElement;
+    const upButton = host.querySelector('.chatlist-scroll-button-up') as HTMLButtonElement;
+    const downButton = host.querySelector('.chatlist-scroll-button-down') as HTMLButtonElement;
 
     downButton.click();
     expect(container.scrollTop).toBe(300);

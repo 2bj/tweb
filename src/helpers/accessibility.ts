@@ -1,5 +1,7 @@
 import type {MyDraftMessage} from '@appManagers/appDraftsManager';
 import type {MyMessage} from '@appManagers/appMessagesManager';
+import Icon from '@components/icon';
+import ripple from '@components/ripple';
 import getPeerTitle from '@components/wrappers/getPeerTitle';
 import {formatTime} from '@helpers/date';
 import cancelEvent from '@helpers/dom/cancelEvent';
@@ -132,19 +134,30 @@ export function applyChatListScrollAccessibility(container: HTMLElement) {
 
   const upButton = document.createElement('button');
   upButton.type = 'button';
-  upButton.className = 'chatlist-scroll-control chatlist-scroll-control-up';
+  upButton.className = 'btn-circle chatlist-scroll-button chatlist-scroll-button-up rp z-depth-1';
   upButton.setAttribute('aria-label', I18n.format('ScrollChatsUp', true));
+  upButton.append(Icon('arrow_up'));
 
   const downButton = document.createElement('button');
   downButton.type = 'button';
-  downButton.className = 'chatlist-scroll-control chatlist-scroll-control-down';
+  downButton.className = 'btn-circle chatlist-scroll-button chatlist-scroll-button-down rp z-depth-1';
   downButton.setAttribute('aria-label', I18n.format('ScrollChatsDown', true));
+  downButton.append(Icon('arrow_down'));
+
+  ripple(upButton);
+  ripple(downButton);
 
   upButton.addEventListener('click', () => scrollChatListContainer(container, 'up'));
   downButton.addEventListener('click', () => scrollChatListContainer(container, 'down'));
 
   controls.append(upButton, downButton);
-  container.append(controls);
+
+  const host = container.parentElement;
+  if(host) {
+    host.append(controls);
+  } else {
+    container.append(controls);
+  }
 
   return () => {
     container.removeEventListener('keydown', onKeyDown);
