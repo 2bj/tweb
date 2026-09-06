@@ -253,6 +253,7 @@ import {
   applyMessagesFeedLandmark,
   updateMessagesFeedLandmark
 } from '@helpers/accessibility';
+import {appendMessageMenuButton, shouldShowMessageMenuButton} from '@components/chat/messageMenuButton';
 
 // TODO: fix new message won't be rendered if an old one is rendering in the moment
 
@@ -9962,6 +9963,15 @@ export default class ChatBubbles {
     }
 
     bubble.classList.add(isOut ? 'is-out' : 'is-in');
+
+    if(shouldShowMessageMenuButton({previewOnly, chatType: this.chat.type, bubble})) {
+      appendMessageMenuButton({
+        bubble,
+        bubbleContainer,
+        onOpen: (e) => this.chat.contextMenu.onContextMenu(e),
+        listenerSetter: this.listenerSetter
+      });
+    }
 
     // * reserve room for the forced guest-bot avatar in 1-on-1 chats (group chats already indent)
     if(guestChatViaFromId) {
