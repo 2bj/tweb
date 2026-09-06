@@ -360,7 +360,8 @@ export class DialogElement {
         wrapOptions: newWrapOptions,
         meAsNotes: isSavedDialog,
         asAllChats: asAllChats === 'monoforum',
-        autoDeletePeriod
+        autoDeletePeriod,
+        onStoriesStatus: withStories ? () => refreshDialogRowAccessibility(this.container) : undefined
       });
     loadPromises?.push(avatar?.readyThumbPromise);
     const avatarEl = avatarElement || avatar?.node;

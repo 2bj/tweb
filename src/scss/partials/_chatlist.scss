@@ -303,6 +303,24 @@ ul.chatlist {
     position: relative; // for z-index
   }
 
+  .dialog-stories-button {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 0;
+    border: 0;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    pointer-events: auto;
+
+    &:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+  }
+
   .user-title {
     display: flex !important;
     align-items: center;

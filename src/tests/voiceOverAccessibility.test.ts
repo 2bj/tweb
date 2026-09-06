@@ -46,11 +46,13 @@ import {
   applyComposerLandmark,
   applyDateBubbleAccessibility,
   applyDialogRowAccessibility,
+  applyDialogRowHitTargets,
   applyMessageInputAccessibility,
   applyMessagesFeedLandmark,
   applySendButtonAccessibility,
   buildBubbleAccessibleName,
   buildDialogAccessibleName,
+  countDialogRowAccessibilityTargets,
   refreshDialogRowAccessibility
 } from '@helpers/accessibility';
 
@@ -237,5 +239,104 @@ describe('voiceOver accessibility helpers', () => {
     expect(bubble.getAttribute('role')).toBe('heading');
     expect(bubble.getAttribute('aria-level')).toBe('2');
     expect(bubble.getAttribute('aria-label')).toBe('Date.Today');
+  });
+
+  it('exposes one accessibility target on dialog rows without stories', () => {
+    const row = document.createElement('a');
+    row.className = 'chatlist-chat row';
+    row.href = '#1';
+    row.innerHTML = `
+      <div class="row-media dialog-avatar">
+        <div class="avatar avatar-like avatar-54" data-peer-id="1"></div>
+      </div>
+      <div class="row-row row-title-row dialog-title">
+        <div class="row-title user-title"><span class="peer-title">Alice</span></div>
+        <div class="row-title-right dialog-title-details">
+          <span class="message-status"></span>
+          <span class="message-time">4:20 PM</span>
+        </div>
+      </div>
+      <div class="row-row row-subtitle-row dialog-subtitle">
+        <div class="row-subtitle"><span class="dialog-subtitle-span">See you soon</span></div>
+        <div class="dialog-subtitle-badge badge dialog-subtitle-badge-unread is-visible">3</div>
+      </div>
+    `;
+
+    applyDialogRowAccessibility(row, {
+      title: 'Alice',
+      subtitle: 'See you soon',
+      time: '4:20 PM',
+      unreadCount: '3'
+    });
+
+    expect(countDialogRowAccessibilityTargets(row)).toBe(1);
+    expect(row.querySelector('.row-title-row')?.getAttribute('aria-hidden')).toBe('true');
+    expect(row.querySelector('.row-subtitle-row')?.getAttribute('aria-hidden')).toBe('true');
+    expect(row.querySelector('.dialog-avatar')?.getAttribute('aria-hidden')).toBe('true');
+    expect(row.querySelector('.dialog-stories-button')).toBeNull();
+  });
+
+  it('exposes chat row and stories button when the peer has stories', () => {
+    const row = document.createElement('a');
+    row.className = 'chatlist-chat row';
+    row.href = '#1';
+    row.innerHTML = `
+      <div class="row-media dialog-avatar">
+        <canvas class="avatar-stories-svg"></canvas>
+        <div class="avatar avatar-like avatar-54 has-stories" data-peer-id="1"></div>
+      </div>
+      <div class="row-row row-title-row dialog-title">
+        <div class="row-title user-title"><span class="peer-title">Bob</span></div>
+        <div class="row-title-right dialog-title-details">
+          <span class="message-time">Now</span>
+        </div>
+      </div>
+      <div class="row-row row-subtitle-row dialog-subtitle">
+        <div class="row-subtitle"><span class="dialog-subtitle-span">New story</span></div>
+      </div>
+    `;
+
+    applyDialogRowAccessibility(row, {
+      title: 'Bob',
+      subtitle: 'New story',
+      time: 'Now'
+    });
+
+    const storiesButton = row.querySelector('.dialog-stories-button') as HTMLButtonElement;
+
+    expect(countDialogRowAccessibilityTargets(row)).toBe(2);
+    expect(storiesButton).not.toBeNull();
+    expect(storiesButton.type).toBe('button');
+    expect(storiesButton.getAttribute('aria-label')).toBe('Stories');
+    expect(storiesButton.dataset.dialogListAction).toBe('stories');
+    expect(row.querySelector('.avatar.has-stories')?.getAttribute('aria-hidden')).toBe('true');
+    expect(row.querySelector('.avatar-stories-svg')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('drops the stories button when stories disappear from a recycled row', () => {
+    const row = document.createElement('a');
+    row.className = 'chatlist-chat row';
+    row.href = '#1';
+    row.innerHTML = `
+      <div class="row-media dialog-avatar">
+        <div class="avatar avatar-like avatar-54 has-stories" data-peer-id="1"></div>
+      </div>
+      <div class="row-row row-title-row dialog-title">
+        <div class="row-title user-title"><span class="peer-title">Bob</span></div>
+      </div>
+      <div class="row-row row-subtitle-row dialog-subtitle">
+        <div class="row-subtitle"><span class="dialog-subtitle-span">Draft</span></div>
+      </div>
+    `;
+
+    applyDialogRowHitTargets(row);
+    expect(row.querySelector('.dialog-stories-button')).not.toBeNull();
+
+    row.querySelector('.avatar')?.classList.remove('has-stories');
+    applyDialogRowHitTargets(row);
+
+    expect(row.querySelector('.dialog-stories-button')).toBeNull();
+    expect(countDialogRowAccessibilityTargets(row)).toBe(1);
+    expect(row.querySelector('.dialog-avatar')?.getAttribute('aria-hidden')).toBe('true');
   });
 });
