@@ -116,6 +116,16 @@ describe('voiceOver accessibility helpers', () => {
     expect(row.getAttribute('aria-label')).toContain('See you soon');
   });
 
+  it('marks virtual chatlists from SortedDialogList with role=list (regression)', () => {
+    const list = document.createElement('ul');
+    list.classList.add('chatlist', 'virtual-chatlist');
+
+    applyChatListAccessibility(list);
+
+    expect(list.classList.contains('virtual-chatlist')).toBe(true);
+    expect(list.getAttribute('role')).toBe('list');
+  });
+
   it('refreshes recycled dialog rows from the live DOM', () => {
     const row = document.createElement('a');
     row.className = 'chatlist-chat active is-muted';
