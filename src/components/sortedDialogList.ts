@@ -3,6 +3,7 @@ import namedPromises from '@helpers/namedPromises';
 import pickKeys from '@helpers/object/pickKeys';
 import safeAssign from '@helpers/object/safeAssign';
 import {default as appDialogsManager, DialogElement} from '@lib/appDialogsManager';
+import {applyChatListAccessibility} from '@helpers/accessibility';
 import {AppManagers} from '@lib/managers';
 import getDialogIndex from '@appManagers/utils/dialogs/getDialogIndex';
 import getDialogIndexKey from '@appManagers/utils/dialogs/getDialogIndexKey';
@@ -132,6 +133,7 @@ export default class SortedDialogList {
     this.list = this.virtualList.list;
 
     this.list.classList.add('chatlist', 'virtual-chatlist');
+    applyChatListAccessibility(this.list);
   }
 
 
