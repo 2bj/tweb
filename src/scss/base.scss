@@ -1686,6 +1686,24 @@ hr {
       }
     }
   }
+
+  .dialog-title-details {
+    display: flex;
+    align-items: center;
+    gap: .125rem;
+  }
+
+  .dialog-chat-menu-button {
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin: -.25rem 0;
+    color: var(--secondary-text-color);
+
+    &-icon {
+      font-size: 1.125rem;
+    }
+  }
 }
 
 .username-purchase-help {

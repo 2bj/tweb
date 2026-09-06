@@ -2,9 +2,10 @@ import type {MyDraftMessage} from '@appManagers/appDraftsManager';
 import type {MyMessage} from '@appManagers/appMessagesManager';
 import Icon from '@components/icon';
 import ripple from '@components/ripple';
+import cancelEvent from '@helpers/dom/cancelEvent';
+import {attachClickEvent} from '@helpers/dom/clickEvent';
 import getPeerTitle from '@components/wrappers/getPeerTitle';
 import {formatTime} from '@helpers/date';
-import cancelEvent from '@helpers/dom/cancelEvent';
 import I18n from '@lib/langPack';
 
 export type ChatListScrollDirection = 'up' | 'down' | 'home' | 'end';
@@ -367,6 +368,35 @@ export function buildDialogAccessibilityStateFromElement(listEl: HTMLElement): D
 
 export function refreshDialogRowAccessibility(listEl: HTMLElement) {
   applyDialogRowAccessibility(listEl, buildDialogAccessibilityStateFromElement(listEl));
+}
+
+export function shouldShowDialogChatMenu(options: {
+  autonomous?: boolean,
+  asAllChats?: 'monoforum' | 'topics',
+  withChatMenu?: boolean
+}) {
+  if(options.withChatMenu !== undefined) {
+    return options.withChatMenu;
+  }
+
+  return !options.autonomous && !options.asAllChats;
+}
+
+export function createDialogChatMenuButton(onOpen: (event: MouseEvent) => void) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn-icon dialog-chat-menu-button rp';
+  button.dataset.dialogListAction = 'true';
+  button.setAttribute('aria-label', I18n.format('ChatMenu', true));
+  button.append(Icon('more', 'dialog-chat-menu-button-icon'));
+
+  ripple(button);
+  attachClickEvent(button, (event) => {
+    cancelEvent(event);
+    onOpen(event);
+  });
+
+  return button;
 }
 
 export function applyChatNavigationLandmark(element: HTMLElement) {
