@@ -64,6 +64,7 @@ type DialogContextMenuButton = ButtonMenuItemOptionsVerifiable & {
 
 export default class DialogsContextMenu {
   private buttons: DialogContextMenuButton[];
+  private openMenu: ReturnType<typeof createContextMenu>['open'];
 
   private peerId: PeerId;
   private filterId: number;
@@ -85,8 +86,12 @@ export default class DialogsContextMenu {
 
   }
 
+  public openFromEvent(event: MouseEvent | TouchEvent) {
+    return this.openMenu?.(event);
+  }
+
   public attach(element: HTMLElement) {
-    createContextMenu({
+    const {open} = createContextMenu({
       listenTo: element,
       buttons: this.getButtons(),
       onOpen: async(e, li) => {
@@ -158,6 +163,7 @@ export default class DialogsContextMenu {
         return findDialogListElement(e.target);
       }
     });
+    this.openMenu = open;
   }
 
   private getButtons() {

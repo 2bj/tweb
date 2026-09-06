@@ -211,7 +211,8 @@ export default function CommunityPeerDialogList<T>(
           avatarElement: communityAvatarMedia || communityAvatar.element,
           wrapOptions: {
             middleware: props.middleware
-          }
+          },
+          withChatMenu: props.withDialogContextMenu
         }) :
         createCommunityDialogElement(
           appDialogsManager,

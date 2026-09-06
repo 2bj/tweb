@@ -126,8 +126,10 @@ import {toastNew} from '@components/toast';
 import {
   applyChatListAccessibility,
   applyChatNavigationLandmark,
+  createDialogChatMenuButton,
   refreshDialogRowAccessibility,
-  relocateChatListScrollControls
+  relocateChatListScrollControls,
+  shouldShowDialogChatMenu
 } from '@helpers/accessibility';
 
 
@@ -157,6 +159,7 @@ export type DialogDom = {
   listEl: HTMLElement,
   subtitleEl: HTMLElement,
   mutedIcon?: HTMLElement,
+  menuButton?: HTMLButtonElement,
 
   titleWrapOptions?: WrapSomethingOptions;
 
@@ -257,7 +260,8 @@ export type DialogElementOptions = {
   dontSetActive?: boolean,
   asAllChats?: AsAllChatsType,
   autoDeletePeriod?: number,
-  avatarElement?: HTMLElement
+  avatarElement?: HTMLElement,
+  withChatMenu?: boolean
 };
 
 export type DialogElementBadgeState = {
@@ -310,7 +314,8 @@ export class DialogElement {
     dontSetActive,
     asAllChats,
     autoDeletePeriod,
-    avatarElement
+    avatarElement,
+    withChatMenu
   }: DialogElementOptions) {
     const wrapMiddleware = wrapOptions?.middleware;
     this.middlewareHelper = wrapMiddleware ? wrapOptions.middleware.create() : (controlled ? getMiddleware() : undefined);
@@ -453,6 +458,14 @@ export class DialogElement {
     rightSpan.classList.add('dialog-title-details');
     rightSpan.append(statusSpan, lastTimeSpan);
 
+    let menuButton: HTMLButtonElement;
+    if(shouldShowDialogChatMenu({autonomous, asAllChats, withChatMenu})) {
+      menuButton = createDialogChatMenuButton((event) => {
+        appDialogsManager.contextMenu.openFromEvent(event);
+      });
+      rightSpan.prepend(menuButton);
+    }
+
     this.subtitleRow.classList.add('dialog-subtitle', 'has-multiple-badges');
 
     // if(I18n.isRTL) {
@@ -471,7 +484,8 @@ export class DialogElement {
       containerEl: li,
       listEl: li,
       subtitleEl: this.subtitleRow,
-      titleWrapOptions
+      titleWrapOptions,
+      menuButton
     };
 
     // this will never happen for migrated legacy chat

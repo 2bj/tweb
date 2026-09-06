@@ -1429,6 +1429,7 @@ const lang = {
   'ScrollChatsUp': 'Chat list up',
   'ScrollChatsDown': 'Chat list down',
   'MessageMenu': 'Message menu',
+  'ChatMenu': 'Chat menu',
   'FilterNew': 'New Folder',
   'Filters': 'Folders',
   'FilterRecommended': 'Recommended Folders',
