@@ -85,6 +85,9 @@ describe('chat list scroll accessibility', () => {
     expect(container.contains(controls)).toBe(false);
     expect(container.nextElementSibling).toBe(controls);
     expect(host.contains(controls)).toBe(true);
+    expect(controls?.children.length).toBe(2);
+    expect(controls?.firstElementChild?.classList.contains('chatlist-scroll-button-up')).toBe(true);
+    expect(controls?.lastElementChild?.classList.contains('chatlist-scroll-button-down')).toBe(true);
 
     destroy();
 
@@ -162,12 +165,12 @@ describe('chat list scroll accessibility', () => {
     expect(folderB.nextElementSibling).toBe(controlsB);
   });
 
-  it('scrolls by roughly one viewport on PageUp and PageDown when focused', () => {
+  it('scrolls by half the viewport on PageUp and PageDown when focused', () => {
     applyChatListScrollAccessibility(container);
     container.focus();
 
     pressKey(container, 'PageDown');
-    expect(container.scrollTop).toBe(300);
+    expect(container.scrollTop).toBe(200);
 
     pressKey(container, 'PageUp');
     expect(container.scrollTop).toBe(100);
@@ -206,9 +209,17 @@ describe('chat list scroll accessibility', () => {
     const downButton = host.querySelector('.chatlist-scroll-button-down') as HTMLButtonElement;
 
     downButton.click();
-    expect(container.scrollTop).toBe(300);
+    expect(container.scrollTop).toBe(200);
 
     upButton.click();
+    expect(container.scrollTop).toBe(100);
+  });
+
+  it('scrolls by half the viewport through scrollChatListContainer', () => {
+    scrollChatListContainer(container, 'down');
+    expect(container.scrollTop).toBe(200);
+
+    scrollChatListContainer(container, 'up');
     expect(container.scrollTop).toBe(100);
   });
 
