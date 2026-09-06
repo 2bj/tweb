@@ -321,6 +321,16 @@ ul.chatlist {
     }
   }
 
+  .dialog-chat-menu-button {
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+
+    &[hidden] {
+      display: none !important;
+    }
+  }
+
   .user-title {
     display: flex !important;
     align-items: center;
