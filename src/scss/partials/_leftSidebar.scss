@@ -416,28 +416,6 @@
     position: relative;
     flex: 1 1 auto;
 
-    .chatlist-scroll-controls {
-      position: absolute;
-      top: 0;
-      inset-inline-start: 0;
-      z-index: 3;
-      pointer-events: none;
-    }
-
-    .chatlist-scroll-control {
-      pointer-events: auto;
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-      background: transparent;
-    }
-
     .folders-scrollable {
       background-color: transparent;
       position: absolute;

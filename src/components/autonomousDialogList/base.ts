@@ -17,7 +17,6 @@ import {AnyDialog} from '@lib/storages/dialogs';
 import {MonoforumDialog} from '@lib/storages/monoforumDialogs';
 import Scrollable from '@components/scrollable';
 import SortedDialogList from '@components/sortedDialogList';
-import {applyChatListScrollAccessibility} from '@helpers/accessibility';
 import {AutonomousDialogList} from '@components/autonomousDialogList/dialogs';
 
 
@@ -68,7 +67,6 @@ export type LoadDialogsInnerArgs = {
 export class AutonomousDialogListBase<T extends PossibleDialog = PossibleDialog> {
   public sortedList: SortedDialogList;
   public scrollable: Scrollable;
-  private chatListScrollAccessibilityDestroy?: () => void;
   public loadedDialogsAtLeastOnce: boolean;
   public needPlaceholderAtFirstTime: boolean;
   // protected offsets: {top: number, bottom: number};
@@ -380,9 +378,6 @@ export class AutonomousDialogListBase<T extends PossibleDialog = PossibleDialog>
     this.scrollable.onScrolledBottom = throttle(() => {
       this.onScrolledBottom();
     }, 200, false);
-
-    this.chatListScrollAccessibilityDestroy?.();
-    this.chatListScrollAccessibilityDestroy = applyChatListScrollAccessibility(this.scrollable.container);
   }
 
   public clear() {
@@ -408,8 +403,6 @@ export class AutonomousDialogListBase<T extends PossibleDialog = PossibleDialog>
   }
 
   public destroy() {
-    this.chatListScrollAccessibilityDestroy?.();
-    this.chatListScrollAccessibilityDestroy = undefined;
     this.clear();
     this.scrollable.destroy();
     this.listenerSetter.removeAll();
