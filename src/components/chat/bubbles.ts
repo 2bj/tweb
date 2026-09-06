@@ -247,6 +247,12 @@ import isEphemeralMessageId from '@appManagers/utils/messageId/isEphemeralMessag
 import {
   CommunityChangedServiceBubble
 } from '@components/chat/bubbles/communityChanged';
+import getPeerTitle from '@components/wrappers/getPeerTitle';
+import {
+  applyBubbleAccessibility,
+  applyMessagesFeedLandmark,
+  updateMessagesFeedLandmark
+} from '@helpers/accessibility';
 
 // TODO: fix new message won't be rendered if an old one is rendering in the moment
 
@@ -1436,6 +1442,7 @@ export default class ChatBubbles {
     this.setScroll();
 
     container.append(removerContainer, this.scrollable.container, floatingSeparatorsContainer);
+    applyMessagesFeedLandmark(container);
   }
 
   public attachContainerListeners() {
@@ -5329,6 +5336,11 @@ export default class ChatBubbles {
     if(!samePeer) {
       // await pause(2000); // * test some bugs
       await m(this.chat.onChangePeer(options, m));
+      getPeerTitle({peerId, plainText: true}).then((title) => {
+        if(middleware()) {
+          updateMessagesFeedLandmark(this.container, title);
+        }
+      });
     }
 
     /* if(samePeer && this.chat.setPeerPromise) {
@@ -10058,6 +10070,14 @@ export default class ChatBubbles {
       loadPromises,
       canTranslate
     });
+
+    if(!previewOnly) {
+      loadPromises.push(applyBubbleAccessibility({
+        bubble,
+        message: message as MyMessage,
+        isOutgoing: isOut
+      }));
+    }
 
     return ret;
   }

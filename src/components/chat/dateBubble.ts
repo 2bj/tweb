@@ -1,5 +1,6 @@
 import {SEND_WHEN_ONLINE_TIMESTAMP} from '@appManagers/constants';
 import {formatDate} from '@helpers/date';
+import {applyDateBubbleAccessibility} from '@helpers/accessibility';
 import {i18n} from '@lib/langPack';
 
 export default function createDateBubble(
@@ -33,6 +34,7 @@ export default function createDateBubble(
   serviceMsg.append(dateElement);
   bubbleContent.append(serviceMsg);
   bubble.append(bubbleContent);
+  applyDateBubbleAccessibility(bubble);
 
   return bubble;
 }

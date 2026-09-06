@@ -178,6 +178,12 @@ import resolveEphemeralCommand, {
   EphemeralCommandCandidate,
   EphemeralCommandResolution
 } from '@appManagers/utils/bots/resolveEphemeralCommand';
+import {
+  applyAttachButtonAccessibility,
+  applyComposerLandmark,
+  applyMessageInputAccessibility,
+  applySendButtonAccessibility
+} from '@helpers/accessibility';
 
 const HOT_CHAT_INPUTS = import.meta.hot ? [] as ChatInput[] : null;
 
@@ -508,6 +514,7 @@ export default class ChatInput {
 
     this.inputContainer.append(this.rowsWrapperWrapper, fakeRowsWrapper, fakeSelectionWrapper);
     this.chatInput.append(this.inputContainer);
+    applyComposerLandmark(this.chatInput);
 
     if(!this.excludeParts.downButton) {
       this.constructGoDownButton();
@@ -1463,6 +1470,9 @@ export default class ChatInput {
     }
 
     this.attachMessageInputField();
+    applyMessageInputAccessibility(this.messageInputField.input);
+    applySendButtonAccessibility(this.btnSend);
+    applyAttachButtonAccessibility(this.attachMenu);
 
     /* this.attachMenu.addEventListener('mousedown', (e) => {
       const hidden = this.attachMenu.querySelectorAll('.hide');
@@ -3039,6 +3049,8 @@ export default class ChatInput {
     } else {
       this.inputMessageContainer.append(this.messageInputField.input, this.messageInputField.placeholder, this.messageInputField.inputFake);
     }
+
+    applyMessageInputAccessibility(this.messageInputField.input);
   }
 
   public passEventToInput(e: KeyboardEvent): void {
