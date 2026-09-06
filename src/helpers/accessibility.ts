@@ -196,6 +196,133 @@ export function applyChatListScrollAccessibility(container: HTMLElement) {
   };
 }
 
+const DIALOG_STORIES_BUTTON_CLASS = 'dialog-stories-button';
+
+const DIALOG_ROW_DECORATIVE_SELECTORS = [
+  '.row-title-row',
+  '.row-subtitle-row',
+  '.avatar-badge',
+  '.dialog-group-call-icon'
+];
+
+const DIALOG_ROW_AVATAR_DECORATIVE_SELECTORS = [
+  '.avatar-stories-svg',
+  '.avatar-stories-simple',
+  'canvas',
+  '.avatar'
+];
+
+function hideFromAccessibilityTree(element: Element) {
+  element.setAttribute('aria-hidden', 'true');
+
+  if(element instanceof HTMLElement && element.hasAttribute('tabindex')) {
+    element.tabIndex = -1;
+  }
+}
+
+function isAccessibilityTarget(element: Element) {
+  if(!(element instanceof HTMLElement)) {
+    return false;
+  }
+
+  if(element.getAttribute('aria-hidden') === 'true') {
+    return false;
+  }
+
+  if(element.closest('[aria-hidden="true"]')) {
+    return false;
+  }
+
+  if(element.matches('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])')) {
+    return true;
+  }
+
+  const role = element.getAttribute('role');
+  return role === 'button' || role === 'link';
+}
+
+export function countDialogRowAccessibilityTargets(listEl: HTMLElement) {
+  const targets = new Set<HTMLElement>();
+
+  if(isAccessibilityTarget(listEl)) {
+    targets.add(listEl);
+  }
+
+  listEl.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"]), [role="button"], [role="link"]').forEach((element) => {
+    if(isAccessibilityTarget(element)) {
+      targets.add(element as HTMLElement);
+    }
+  });
+
+  return targets.size;
+}
+
+function getDialogRowMedia(listEl: HTMLElement) {
+  return listEl.querySelector('.dialog-avatar.row-media, .row-media.dialog-avatar') as HTMLElement | null;
+}
+
+function removeDialogStoriesButton(listEl: HTMLElement) {
+  listEl.querySelector(`.${DIALOG_STORIES_BUTTON_CLASS}`)?.remove();
+}
+
+function applyDialogStoriesButton(listEl: HTMLElement) {
+  const media = getDialogRowMedia(listEl);
+  const hasStories = !!listEl.querySelector('.avatar.has-stories');
+
+  if(!hasStories || !media) {
+    removeDialogStoriesButton(listEl);
+    if(media) {
+      hideFromAccessibilityTree(media);
+    }
+    return;
+  }
+
+  media.removeAttribute('aria-hidden');
+
+  let button = media.querySelector(`.${DIALOG_STORIES_BUTTON_CLASS}`) as HTMLButtonElement | null;
+  if(!button) {
+    button = document.createElement('button');
+    button.type = 'button';
+    button.className = DIALOG_STORIES_BUTTON_CLASS;
+    button.dataset.dialogListAction = 'stories';
+    button.addEventListener('mousedown', (event) => event.stopPropagation());
+    button.addEventListener('keydown', (event) => {
+      if(event.key === 'Enter' || event.key === ' ') {
+        event.stopPropagation();
+      }
+    });
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const avatar = listEl.querySelector('.avatar.has-stories') as HTMLElement;
+      if(!avatar) {
+        return;
+      }
+
+      void import('@lib/appImManager').then(({default: appImManager}) => {
+        appImManager.openStoriesFromAvatar(avatar);
+      });
+    });
+    media.append(button);
+  }
+
+  button.setAttribute('aria-label', I18n.format('Stories', true));
+  button.tabIndex = 0;
+
+  for(const selector of DIALOG_ROW_AVATAR_DECORATIVE_SELECTORS) {
+    media.querySelectorAll(selector).forEach(hideFromAccessibilityTree);
+  }
+}
+
+export function applyDialogRowHitTargets(listEl: HTMLElement) {
+  for(const selector of DIALOG_ROW_DECORATIVE_SELECTORS) {
+    listEl.querySelectorAll(selector).forEach(hideFromAccessibilityTree);
+  }
+
+  applyDialogStoriesButton(listEl);
+}
+
 export function applyDialogRowAccessibility(listEl: HTMLElement, state: DialogRowAccessibilityState) {
   listEl.setAttribute('role', 'listitem');
 
@@ -211,6 +338,8 @@ export function applyDialogRowAccessibility(listEl: HTMLElement, state: DialogRo
   } else {
     listEl.removeAttribute('aria-current');
   }
+
+  applyDialogRowHitTargets(listEl);
 }
 
 export function buildDialogAccessibilityStateFromElement(listEl: HTMLElement): DialogRowAccessibilityState {
