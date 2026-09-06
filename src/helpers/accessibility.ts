@@ -120,6 +120,33 @@ export function handleChatListScrollKeydown(event: KeyboardEvent, container: HTM
   return true;
 }
 
+const chatListScrollControlsByContainer = new WeakMap<HTMLElement, HTMLElement>();
+
+export function relocateChatListScrollControls(container: HTMLElement) {
+  const host = container.parentElement;
+  if(host?.id !== 'folders-container') {
+    return;
+  }
+
+  let controls = chatListScrollControlsByContainer.get(container) ?? null;
+  if(!controls?.isConnected) {
+    controls = container.nextElementSibling as HTMLElement | null;
+  }
+  if(!controls?.classList.contains('chatlist-scroll-controls')) {
+    controls = container.querySelector(':scope > .chatlist-scroll-controls') as HTMLElement | null;
+  }
+
+  if(!controls) {
+    return;
+  }
+
+  chatListScrollControlsByContainer.set(container, controls);
+
+  if(controls.previousElementSibling !== container) {
+    container.insertAdjacentElement('afterend', controls);
+  }
+}
+
 export function applyChatListScrollAccessibility(container: HTMLElement) {
   container.tabIndex = 0;
 
@@ -151,17 +178,22 @@ export function applyChatListScrollAccessibility(container: HTMLElement) {
   downButton.addEventListener('click', () => scrollChatListContainer(container, 'down'));
 
   controls.append(upButton, downButton);
+  chatListScrollControlsByContainer.set(container, controls);
 
-  const host = container.parentElement;
-  if(host) {
-    host.append(controls);
-  } else {
-    container.append(controls);
-  }
+  const mountControls = () => {
+    if(!controls.isConnected) {
+      container.append(controls);
+    }
+    relocateChatListScrollControls(container);
+  };
+
+  mountControls();
+  queueMicrotask(mountControls);
 
   return () => {
     container.removeEventListener('keydown', onKeyDown);
     controls.remove();
+    chatListScrollControlsByContainer.delete(container);
     container.removeAttribute('tabindex');
   };
 }

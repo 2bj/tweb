@@ -430,7 +430,8 @@
       pointer-events: none;
     }
 
-    .folders-scrollable.active + .chatlist-scroll-controls {
+    .folders-scrollable.active + .chatlist-scroll-controls,
+    .folders-scrollable.active > .chatlist-scroll-controls {
       display: flex;
     }
 
