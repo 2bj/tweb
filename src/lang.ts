@@ -1426,6 +1426,8 @@ const lang = {
   'FilterExclude': 'Excluded Chats',
   'FilterChatTypes': 'Chat types',
   'FilterChats': 'Chats',
+  'ScrollChatsUp': 'Scroll chats up',
+  'ScrollChatsDown': 'Scroll chats down',
   'FilterNew': 'New Folder',
   'Filters': 'Folders',
   'FilterRecommended': 'Recommended Folders',

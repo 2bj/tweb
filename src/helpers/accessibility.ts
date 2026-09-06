@@ -2,7 +2,10 @@ import type {MyDraftMessage} from '@appManagers/appDraftsManager';
 import type {MyMessage} from '@appManagers/appMessagesManager';
 import getPeerTitle from '@components/wrappers/getPeerTitle';
 import {formatTime} from '@helpers/date';
+import cancelEvent from '@helpers/dom/cancelEvent';
 import I18n from '@lib/langPack';
+
+export type ChatListScrollDirection = 'up' | 'down' | 'home' | 'end';
 
 export type DialogRowAccessibilityState = {
   title?: string,
@@ -63,6 +66,91 @@ export function applyChatListAccessibility(list: HTMLElement, label?: string) {
   if(label) {
     list.setAttribute('aria-label', label);
   }
+}
+
+export function scrollChatListContainer(container: HTMLElement, direction: ChatListScrollDirection) {
+  const page = container.clientHeight;
+
+  if(direction === 'home') {
+    container.scrollTop = 0;
+    return;
+  }
+
+  if(direction === 'end') {
+    container.scrollTop = container.scrollHeight;
+    return;
+  }
+
+  const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+  const delta = direction === 'up' ? -page : page;
+  container.scrollTop = Math.min(maxScrollTop, Math.max(0, container.scrollTop + delta));
+}
+
+export function handleChatListScrollKeydown(event: KeyboardEvent, container: HTMLElement) {
+  if(document.activeElement !== container) {
+    return false;
+  }
+
+  if(event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+    return false;
+  }
+
+  let direction: ChatListScrollDirection;
+  switch(event.key) {
+    case 'PageUp':
+      direction = 'up';
+      break;
+    case 'PageDown':
+      direction = 'down';
+      break;
+    case 'Home':
+      direction = 'home';
+      break;
+    case 'End':
+      direction = 'end';
+      break;
+    default:
+      return false;
+  }
+
+  scrollChatListContainer(container, direction);
+  cancelEvent(event);
+  return true;
+}
+
+export function applyChatListScrollAccessibility(container: HTMLElement) {
+  container.tabIndex = 0;
+
+  const onKeyDown = (event: KeyboardEvent) => {
+    handleChatListScrollKeydown(event, container);
+  };
+
+  container.addEventListener('keydown', onKeyDown);
+
+  const controls = document.createElement('div');
+  controls.className = 'chatlist-scroll-controls';
+
+  const upButton = document.createElement('button');
+  upButton.type = 'button';
+  upButton.className = 'chatlist-scroll-control chatlist-scroll-control-up';
+  upButton.setAttribute('aria-label', I18n.format('ScrollChatsUp', true));
+
+  const downButton = document.createElement('button');
+  downButton.type = 'button';
+  downButton.className = 'chatlist-scroll-control chatlist-scroll-control-down';
+  downButton.setAttribute('aria-label', I18n.format('ScrollChatsDown', true));
+
+  upButton.addEventListener('click', () => scrollChatListContainer(container, 'up'));
+  downButton.addEventListener('click', () => scrollChatListContainer(container, 'down'));
+
+  controls.append(upButton, downButton);
+  container.append(controls);
+
+  return () => {
+    container.removeEventListener('keydown', onKeyDown);
+    controls.remove();
+    container.removeAttribute('tabindex');
+  };
 }
 
 export function applyDialogRowAccessibility(listEl: HTMLElement, state: DialogRowAccessibilityState) {
