@@ -71,8 +71,6 @@ export function applyChatListAccessibility(list: HTMLElement, label?: string) {
 }
 
 export function scrollChatListContainer(container: HTMLElement, direction: ChatListScrollDirection) {
-  const page = container.clientHeight;
-
   if(direction === 'home') {
     container.scrollTop = 0;
     return;
@@ -84,7 +82,7 @@ export function scrollChatListContainer(container: HTMLElement, direction: ChatL
   }
 
   const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
-  const delta = direction === 'up' ? -page : page;
+  const delta = direction === 'up' ? -container.clientHeight / 2 : container.clientHeight / 2;
   container.scrollTop = Math.min(maxScrollTop, Math.max(0, container.scrollTop + delta));
 }
 

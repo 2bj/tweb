@@ -420,13 +420,11 @@
       position: absolute;
       inset-inline-end: 0.75rem;
       top: calc(var(--chatlist-overlay-height, 0px) + 0.5rem);
-      bottom: calc(var(--chatlist-scroll-controls-bottom, 7rem));
       z-index: 2;
       display: none;
-      flex-direction: column;
-      justify-content: space-between;
+      flex-direction: row;
       align-items: center;
-      width: var(--chatlist-scroll-button-size, 40px);
+      gap: 0.5rem;
       pointer-events: none;
     }
 
@@ -457,7 +455,6 @@
 
     @include respond-to(handhelds) {
       .chatlist-scroll-controls {
-        --chatlist-scroll-controls-bottom: calc(46px + 14px + 0.75rem);
         inset-inline-end: 14px;
       }
     }
