@@ -416,6 +416,51 @@
     position: relative;
     flex: 1 1 auto;
 
+    .chatlist-scroll-controls {
+      position: absolute;
+      inset-inline-end: 0.75rem;
+      top: calc(var(--chatlist-overlay-height, 0px) + 0.5rem);
+      bottom: calc(var(--chatlist-scroll-controls-bottom, 7rem));
+      z-index: 2;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      width: var(--chatlist-scroll-button-size, 40px);
+      pointer-events: none;
+    }
+
+    .folders-scrollable.active + .chatlist-scroll-controls {
+      display: flex;
+    }
+
+    .chatlist-scroll-button {
+      --size: var(--chatlist-scroll-button-size, 40px);
+      pointer-events: auto;
+      flex-shrink: 0;
+      border: none;
+      outline: none;
+      padding: 0 !important;
+      cursor: pointer;
+      color: var(--secondary-text-color);
+      background-color: var(--surface-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+
+      @include hover() {
+        background-color: var(--light-secondary-text-color);
+      }
+    }
+
+    @include respond-to(handhelds) {
+      .chatlist-scroll-controls {
+        --chatlist-scroll-controls-bottom: calc(46px + 14px + 0.75rem);
+        inset-inline-end: 14px;
+      }
+    }
+
     .folders-scrollable {
       background-color: transparent;
       position: absolute;
