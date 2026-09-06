@@ -124,9 +124,10 @@ import ListenerSetter from '@helpers/listenerSetter';
 import type PopupPeer from '@components/popups/peer';
 import {toastNew} from '@components/toast';
 import {
-  renderChatlistTopNotification,
-  type ChatlistTopNotificationController
-} from '@components/sidebarLeft/chatlistTopNotification';
+  applyChatListAccessibility,
+  applyChatNavigationLandmark,
+  refreshDialogRowAccessibility
+} from '@helpers/accessibility';
 
 
 export const DIALOG_LIST_ELEMENT_TAG = 'A';
@@ -483,6 +484,8 @@ export class DialogElement {
     if(isActive) {
       appDialogsManager.setDialogActive(li, true);
     }
+
+    refreshDialogRowAccessibility(li);
   }
 
   public destroy() {
@@ -861,6 +864,19 @@ export class AppDialogsManager {
 
     this.allChatsIntlElement = new I18n.IntlElement({
       key: 'FilterAllChatsShort'
+    });
+
+    applyChatNavigationLandmark(this.chatsContainer);
+
+    rootScope.addEventListener('peer_title_edit', ({peerId, threadId}) => {
+      let selector = `.chatlist-chat[data-peer-id="${peerId}"]`;
+      if(threadId) {
+        selector += `[data-thread-id="${threadId}"]`;
+      }
+
+      document.querySelectorAll<HTMLElement>(selector).forEach((listEl) => {
+        refreshDialogRowAccessibility(listEl);
+      });
     });
 
     rootScope.addEventListener('state_cleared', () => {
@@ -1242,6 +1258,8 @@ export class AppDialogsManager {
     if(dom?.callIcon) {
       dom.callIcon.setActive(active);
     }
+
+    refreshDialogRowAccessibility(listEl);
   }
 
   private async onStateLoaded(state: State) {
@@ -2314,6 +2332,8 @@ export class AppDialogsManager {
       list.classList.add('chatlist-' + options.dialogSize);
     }
 
+    applyChatListAccessibility(list);
+
     // if(options.ignoreClick) {
     //   list.classList.add('disable-hover');
     // }
@@ -2505,6 +2525,7 @@ export class AppDialogsManager {
       delete dom.listEl.dataset.mid;
       delete dom.listEl.dataset.searchQuery;
 
+      refreshDialogRowAccessibility(dom.listEl);
       promise.resolve();
       return;
     }
@@ -2618,6 +2639,7 @@ export class AppDialogsManager {
 
     dom.lastMessageRenderKey = renderKey;
     dom.lastMessageRenderParts = renderedParts;
+    refreshDialogRowAccessibility(dom.listEl);
     promise.resolve();
   }
 
@@ -2765,6 +2787,7 @@ export class AppDialogsManager {
     //   }
     // }
 
+    refreshDialogRowAccessibility(dom.listEl);
     deferred.resolve();
   }
 
