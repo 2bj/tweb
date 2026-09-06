@@ -450,7 +450,7 @@
       font-size: 1.25rem;
 
       @include hover() {
-        background-color: var(--light-secondary-text-color);
+        background-color: var(--light-filled-secondary-text-color);
       }
     }
 
