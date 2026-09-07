@@ -6,8 +6,8 @@
  * Takes the NDJSON dump + the dist/ folder of the EXACT build that produced it
  * (match `version`/`versionFull` from the meta line against the deploy), and
  * rewrites every captured stack frame from minified `file.js:line:col` to the
- * original `src/…:line:col` using the .map files Vite emits (build.sourcemap is
- * on). Dependency-free: a small VLQ source-map decoder is inlined below.
+ * original `src/…:line:col` using the .map files Vite emits when
+ * `build.sourcemap` is on. Production builds currently omit maps. Dependency-free: a small VLQ source-map decoder is inlined below.
  *
  * Usage:
  *   node src/scripts/symbolicate-logs.js <logs.ndjson> [distDir=dist]

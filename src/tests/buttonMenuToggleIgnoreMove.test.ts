@@ -15,7 +15,7 @@ vi.mock('@helpers/appWindow', () => ({
   getOverlayRoot: () => document.body,
   onAppWindowChange: vi.fn()
 }));
-vi.mock('@helpers/dom/fullScreen', () => ({getFullScreenElement: () => null}));
+vi.mock('@helpers/dom/fullScreen', () => ({getFullScreenElement: (): HTMLElement => null}));
 vi.mock('@environment/touchSupport', () => ({default: false}));
 
 import {ButtonMenuToggleHandler} from '@components/buttonMenuToggle';
