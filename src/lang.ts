@@ -1430,6 +1430,7 @@ const lang = {
   'ScrollChatsDown': 'Chat list down',
   'MessageMenu': 'Message menu',
   'ChatMenu': 'Chat menu',
+  'OpenMenu': 'Open menu',
   'FilterNew': 'New Folder',
   'Filters': 'Folders',
   'FilterRecommended': 'Recommended Folders',

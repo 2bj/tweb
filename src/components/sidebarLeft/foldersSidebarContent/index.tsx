@@ -1,6 +1,7 @@
 import {Accessor, createEffect, createSelector, createSignal, For, onCleanup, onMount, Show} from 'solid-js';
 import {createStore} from 'solid-js/store';
 import {render} from 'solid-js/web';
+import {applyFoldersNavigationLandmark, handleFolderItemKeydown} from '@helpers/accessibility';
 import createFolderContextMenu from '@helpers/dom/createFolderContextMenu';
 import {keepMe} from '@helpers/keepMe';
 import {Middleware} from '@helpers/middleware';
@@ -8,7 +9,8 @@ import pause from '@helpers/schedulers/pause';
 import Animated from '@helpers/solid/animations';
 import classNames from '@helpers/string/classNames';
 import {logger, LogTypes} from '@lib/logger';
-import {REAL_FOLDERS} from '@appManagers/constants';
+import {FOLDER_ID_ALL, REAL_FOLDERS} from '@appManagers/constants';
+import I18n from '@lib/langPack';
 import {useHotReloadGuard} from '@lib/solidjs/hotReloadGuard';
 import type SolidJSHotReloadGuardProvider from '@lib/solidjs/hotReloadGuardProvider';
 import useHasFoldersSidebar from '@stores/foldersSidebar';
@@ -145,6 +147,7 @@ export function FoldersSidebarContent(props: {
         ref={setMenuTarget}
         class="folders-sidebar__menu-button is-first"
         icon="menu"
+        accessibleTitle={I18n.format('OpenMenu', true)}
         notifications={{
           count: props.allNotificationsCount(),
           muted: false
@@ -169,6 +172,11 @@ export function FoldersSidebarContent(props: {
               <FolderItem
                 {...folderItem}
                 {...getFolderTitle(folderItem.filter)}
+                accessibleTitle={
+                  id === FOLDER_ID_ALL ?
+                    I18n.format('FilterAllChats', true) :
+                    (folderItem.filter.title?.text || '').trim()
+                }
                 ref={(el) => setFolderItemRefs({[id]: el})}
                 selected={isSelected(id)}
                 onClick={() => _onClick(id)}
@@ -181,12 +189,15 @@ export function FoldersSidebarContent(props: {
           {showAddFolders() && <div
             use:ripple
             class="folders-sidebar__add-folders-button"
+            role="button"
+            tabIndex={0}
             onClick={() => contextMenu.openSettingsForFilter(selectedFolderId())}
+            onKeyDown={(e) => handleFolderItemKeydown(e, () => contextMenu.openSettingsForFilter(selectedFolderId()))}
             style={{
               '--offset': addFoldersOffset()
             }}
           >
-            <IconTsx icon="plus" class="folders-sidebar__add-folders-button-icon" />
+            <IconTsx icon="plus" class="folders-sidebar__add-folders-button-icon" aria-hidden="true" />
             <div class="folders-sidebar__add-folders-button-name">
               {i18n('ChatList.Filter.Include.AddChat')}
             </div>
@@ -197,6 +208,7 @@ export function FoldersSidebarContent(props: {
       <FolderItem
         class="folders-sidebar__menu-button is-last"
         icon="equalizer"
+        accessibleTitle={I18n.format('ChatList.Filter.List.Title', true)}
         onClick={() => {
           if(openingChatFolders || appSidebarLeft.getTab(AppChatFoldersTab)) return;
           openingChatFolders = true;
@@ -223,6 +235,7 @@ export function renderFoldersSidebarContent(
   const foldersSidebar = document.createElement('div');
   foldersSidebar.id = 'folders-sidebar';
   foldersSidebar.className = 'folders-sidebar sidebar-left-common';
+  applyFoldersNavigationLandmark(foldersSidebar);
   parentEl.insertBefore(foldersSidebar, parentEl.firstChild);
 
   const dispose = render(() => (

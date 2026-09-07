@@ -47,6 +47,8 @@ import {
   applyDateBubbleAccessibility,
   applyDialogRowAccessibility,
   applyDialogRowHitTargets,
+  applyFolderItemAccessibility,
+  applyFoldersNavigationLandmark,
   applyMessageInputAccessibility,
   applyMessagesFeedLandmark,
   applySendButtonAccessibility,
@@ -339,5 +341,37 @@ describe('voiceOver accessibility helpers', () => {
     expect(row.querySelector('.dialog-stories-button')).toBeNull();
     expect(countDialogRowAccessibilityTargets(row)).toBe(1);
     expect(row.querySelector('.dialog-avatar')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('labels folders navigation landmark and folder buttons', () => {
+    const nav = document.createElement('div');
+    applyFoldersNavigationLandmark(nav);
+    expect(nav.getAttribute('role')).toBe('navigation');
+    expect(nav.getAttribute('aria-label')).toBe('ChatList.Filter.List.Title');
+
+    const item = document.createElement('div');
+    item.innerHTML = '<span class="folders-sidebar__folder-item-icon"></span><div class="folders-sidebar__folder-item-badge">3</div>';
+    applyFolderItemAccessibility(item, {
+      title: 'unread',
+      unreadCount: 3,
+      isMuted: true,
+      selected: true
+    });
+
+    expect(item.getAttribute('role')).toBe('button');
+    expect(item.getAttribute('tabindex')).toBe('0');
+    expect(item.getAttribute('aria-current')).toBe('true');
+    expect(item.getAttribute('aria-label')).toContain('unread');
+    expect(item.getAttribute('aria-label')).toContain('messages');
+    expect(item.getAttribute('aria-label')).toContain('NotificationsMuted');
+    expect(item.querySelector('.folders-sidebar__folder-item-icon')?.getAttribute('aria-hidden')).toBe('true');
+    expect(item.querySelector('.folders-sidebar__folder-item-badge')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('omits aria-current and unread when not applicable', () => {
+    const item = document.createElement('div');
+    applyFolderItemAccessibility(item, {title: 'work', selected: false});
+    expect(item.getAttribute('aria-label')).toBe('work');
+    expect(item.hasAttribute('aria-current')).toBe(false);
   });
 });

@@ -1,4 +1,6 @@
 import {createComputed, createEffect, createMemo, createSignal, Show} from 'solid-js';
+import {applyFolderItemAccessibility, handleFolderItemKeydown} from '@helpers/accessibility';
+import {simulateClickEvent} from '@helpers/dom/clickEvent';
 import {keepMe} from '@helpers/keepMe';
 import createMiddleware from '@helpers/solid/createMiddleware';
 import {CustomEmojiRendererElement} from '@lib/customEmoji/renderer';
@@ -16,13 +18,16 @@ type FolderItemProps = FolderItemPayload & {
   ref?: (el: HTMLDivElement | null) => void,
   class?: string,
   selected?: boolean,
-  onClick?: () => void
+  onClick?: () => void,
+  accessibleTitle?: string
 };
 
 const ICON_SIZE = 30;
 
 export default function FolderItem(props: FolderItemProps) {
   const {rootScope, wrapFolderTitle} = useHotReloadGuard();
+
+  let el: HTMLDivElement;
 
   const [failedToFetchIconDoc, setFailedToFetchIconDoc] = createSignal(false);
 
@@ -54,11 +59,23 @@ export default function FolderItem(props: FolderItemProps) {
     hasCustomIcon() && setFailedToFetchIconDoc(false);
   });
 
+  createEffect(() => {
+    if(!el) return;
+    showCustomIcon();
+    applyFolderItemAccessibility(el, {
+      title: props.accessibleTitle || '',
+      unreadCount: props.notifications?.count,
+      isMuted: !!props.notifications?.muted,
+      selected: !!props.selected
+    });
+  });
+
   return (
     <div
       use:ripple
-      ref={(el) => {
-        props.ref?.(el);
+      ref={(_el) => {
+        el = _el;
+        props.ref?.(_el);
       }}
       class="folders-sidebar__folder-item"
       classList={{
@@ -70,6 +87,15 @@ export default function FolderItem(props: FolderItemProps) {
         {}
       )}
       onClick={props.onClick}
+      onKeyDown={(e) => {
+        handleFolderItemKeydown(e, () => {
+          if(props.onClick) {
+            props.onClick();
+            return;
+          }
+          simulateClickEvent(el);
+        });
+      }}
     >
       <Show
         when={showCustomIcon()}

@@ -522,3 +522,78 @@ export async function applyBubbleAccessibility(options: {
     await buildBubbleAccessibleName(options)
   );
 }
+
+export type FolderItemAccessibilityState = {
+  title: string,
+  unreadCount?: number,
+  isMuted?: boolean,
+  selected?: boolean
+};
+
+export function buildFolderAccessibleName(state: FolderItemAccessibilityState): string {
+  const parts: string[] = [];
+
+  if(state.title) {
+    parts.push(state.title);
+  }
+
+  if(state.unreadCount && state.unreadCount > 0) {
+    parts.push(I18n.format('messages', true, [state.unreadCount]));
+  }
+
+  if(state.isMuted) {
+    parts.push(I18n.format('NotificationsMuted', true));
+  }
+
+  return joinAccessibleParts(parts);
+}
+
+export function applyFoldersNavigationLandmark(element: HTMLElement) {
+  element.setAttribute('role', 'navigation');
+  element.setAttribute('aria-label', I18n.format('ChatList.Filter.List.Title', true));
+}
+
+const FOLDER_ITEM_DECORATIVE_SELECTORS = [
+  '.folders-sidebar__folder-item-icon',
+  '.folders-sidebar__folder-item-animated-icon',
+  '.folders-sidebar__folder-item-badge',
+  '.menu-horizontal-div-item-background',
+  '.tgico',
+  'custom-emoji-renderer-element',
+  '.badge'
+];
+
+export function applyFolderItemAccessibility(element: HTMLElement, state: FolderItemAccessibilityState) {
+  element.setAttribute('role', 'button');
+  element.tabIndex = 0;
+
+  const label = buildFolderAccessibleName(state);
+  if(label) {
+    element.setAttribute('aria-label', label);
+  } else {
+    element.removeAttribute('aria-label');
+  }
+
+  if(state.selected) {
+    element.setAttribute('aria-current', 'true');
+  } else {
+    element.removeAttribute('aria-current');
+  }
+
+  for(const selector of FOLDER_ITEM_DECORATIVE_SELECTORS) {
+    element.querySelectorAll(selector).forEach(hideFromAccessibilityTree);
+  }
+}
+
+export function handleFolderItemKeydown(event: KeyboardEvent, activate: () => void) {
+  if(event.repeat) {
+    return;
+  }
+
+  if(event.key !== 'Enter' && event.key !== ' ') {
+    return;
+  }
+
+  event.preventDefault();
+  activate();
+}

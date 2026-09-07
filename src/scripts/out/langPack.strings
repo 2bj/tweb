@@ -1265,6 +1265,11 @@
 "FilterExclude" = "Excluded Chats";
 "FilterChatTypes" = "Chat types";
 "FilterChats" = "Chats";
+"ScrollChatsUp" = "Chat list up";
+"ScrollChatsDown" = "Chat list down";
+"MessageMenu" = "Message menu";
+"ChatMenu" = "Chat menu";
+"OpenMenu" = "Open menu";
 "FilterNew" = "New Folder";
 "Filters" = "Folders";
 "FilterRecommended" = "Recommended Folders";
