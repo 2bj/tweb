@@ -135,6 +135,10 @@ import {
   relocateChatListScrollControls,
   shouldShowDialogChatMenu
 } from '@helpers/accessibility';
+import {
+  renderChatlistTopNotification,
+  type ChatlistTopNotificationController
+} from '@components/sidebarLeft/chatlistTopNotification';
 
 
 export const DIALOG_LIST_ELEMENT_TAG = 'A';
@@ -1548,6 +1552,8 @@ export class AppDialogsManager {
     // this.folders.container.append(div);
     positionElementByIndex(scrollable.container, this.folders.container, filter.localId);
     relocateChatListScrollControls(scrollable.container);
+
+    this.xds[id].bindScrollable();
 
     this.filtersRendered[id] = {
       id,

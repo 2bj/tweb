@@ -5,6 +5,7 @@ import cancelEvent from '@helpers/dom/cancelEvent';
 import ListenerSetter from '@helpers/listenerSetter';
 import liteMode from '@helpers/liteMode';
 import I18n from '@lib/langPack';
+import {getTabPanelByIndex, getTabPanelIndex} from '@helpers/dom/tabPanels';
 
 const USE_3D = true;
 
@@ -243,7 +244,7 @@ const TransitionSlider = (options: TransitionSliderOptions) => {
     }
 
     if(id instanceof HTMLElement) {
-      id = whichChild(id);
+      id = getTabPanelIndex(content, id);
     }
 
     const prevId = selectTab.prevId();
@@ -253,7 +254,7 @@ const TransitionSlider = (options: TransitionSliderOptions) => {
 
     // console.log('selectTab id:', id);
 
-    const to = content.children[id] as HTMLElement;
+    const to = getTabPanelByIndex(content, id);
 
     if(!liteMode.isAvailable('animations') || (prevId === -1 && !animateFirst)) {
       animate = false;
@@ -373,7 +374,7 @@ const TransitionSlider = (options: TransitionSliderOptions) => {
   }
 
   // selectTab.prevId = -1;
-  selectTab.prevId = () => from ? whichChild(from) : -1;
+  selectTab.prevId = () => from ? getTabPanelIndex(content, from) : -1;
   selectTab.getFrom = () => from;
   selectTab.setFrom = (_from: HTMLElement) => from = _from;
 
