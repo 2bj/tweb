@@ -1430,6 +1430,8 @@ const lang = {
   'ScrollChatsDown': 'Chat list down',
   'MessageMenu': 'Message menu',
   'ChatMenu': 'Chat menu',
+  'SidebarMenu': 'Menu',
+  'SidebarBack': 'Back',
   'OpenMenu': 'Open menu',
   'Attach': 'Attach',
   'FilterNew': 'New Folder',

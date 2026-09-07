@@ -81,7 +81,12 @@ import {AppChatFoldersTab} from '@components/solidJsTabs/tabs';
 import {SliderSuperTabConstructable} from '@components/sliderTab';
 import SettingsSliderPopup from '@components/sidebarLeft/settingsSliderPopup';
 import {AppEditFolderTab} from '@components/solidJsTabs/tabs';
-import {addShortcutListener} from '@helpers/shortcutListener';
+import {
+  applyInputSearchAccessibility,
+  applySidebarBackButtonAccessibility,
+  applySidebarSearchTriggerAccessibility,
+  applySidebarToolsButtonAccessibility
+} from '@helpers/accessibility';
 import tsNow from '@helpers/tsNow';
 import {toastNew} from '@components/toast';
 import DeferredIsUsingPasscode from '@lib/passcode/deferredIsUsingPasscode';
@@ -153,15 +158,18 @@ export class AppSidebarLeft extends SidebarSlider {
     this.chatListContainer = document.getElementById('chatlist-container');
     this.inputSearch = new InputSearch({oldStyle: true});
     (this.inputSearch.input as HTMLInputElement).placeholder = ' ';
+    applyInputSearchAccessibility(this.inputSearch);
     const sidebarHeader = this.sidebarEl.querySelector('.item-main .sidebar-header');
     sidebarHeader.append(this.inputSearch.container);
 
     this.backBtn = this.sidebarEl.querySelector('.sidebar-back-button') as HTMLButtonElement;
+    applySidebarBackButtonAccessibility(this.backBtn);
 
     this.toolsBtn = this.createToolsMenu();
     // .is-visible is owned by the Solid effect below (see "burger element
     // has two visual states") — don't seed it here.
     this.toolsBtn.classList.add('sidebar-tools-button');
+    applySidebarToolsButtonAccessibility(this.toolsBtn);
     this.totalNotificationsCount = createBadge('span', 20, 'primary');
     this.totalNotificationsCount.classList.add('sidebar-tools-button-notifications');
     this.toolsBtn.append(this.totalNotificationsCount);
@@ -388,6 +396,7 @@ export class AppSidebarLeft extends SidebarSlider {
     this.searchTriggerWhenCollapsed = document.createElement('div');
     this.searchTriggerWhenCollapsed.className = 'sidebar-header-search-trigger';
     this.searchTriggerWhenCollapsed.append(ButtonIcon('search'));
+    applySidebarSearchTriggerAccessibility(this.searchTriggerWhenCollapsed);
     this.searchTriggerWhenCollapsed.addEventListener('click', () => {
       this.initSearch().open();
     });
@@ -759,6 +768,7 @@ export class AppSidebarLeft extends SidebarSlider {
       container: mountTo,
       positionPadding,
       onOpenBefore: async() => {
+        buttonMenuToggle.setAttribute('aria-expanded', 'true');
         const emptyAttachMenuBots: AttachMenuBot[] = [];
         const attachMenuBots = await Promise.race([
           pause(30).then(() => emptyAttachMenuBots),
@@ -877,11 +887,14 @@ export class AppSidebarLeft extends SidebarSlider {
         btnArchive.element?.append(this.archivedCount);
       },
       onClose: () => {
+        buttonMenuToggle.setAttribute('aria-expanded', 'false');
         moreSubmenu.onClose();
         newSubmenu.onClose();
       },
       noIcon: true
     });
+
+    buttonMenuToggle.setAttribute('aria-expanded', 'false');
 
     return buttonMenuToggle;
   }

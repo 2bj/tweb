@@ -1,6 +1,8 @@
 import lastItem from '@helpers/array/lastItem';
 import ListenerSetter from '@helpers/listenerSetter';
 import formatNumber from '@helpers/number/formatNumber';
+import {applyArchiveDialogAccessibility, getElementPlainText} from '@helpers/accessibility';
+import I18n from '@lib/langPack';
 import {I18nTsx} from '@helpers/solid/i18n';
 import {Dialog} from '@layer';
 import {StoriesSegments} from '@lib/appManagers/appStoriesManager';
@@ -60,6 +62,16 @@ const ArchiveDialog = defineSolidElement({
     controls.openStory = () => {
       props.state.openArchiveStories(openStoriesTarget());
     };
+
+    createEffect(() => {
+      sortedDialogs();
+      const unread = totalUnreadCount();
+      applyArchiveDialogAccessibility(props.element, {
+        title: I18n.format('ArchivedChats', true),
+        subtitle: getElementPlainText(props.element.querySelector(`.${styles.Subtitle}`)),
+        unreadCount: unread > 0 ? formatNumber(unread, 1) : undefined
+      });
+    });
 
     return (
       <>

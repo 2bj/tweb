@@ -476,6 +476,47 @@ export function applyChatNavigationLandmark(element: HTMLElement) {
   element.setAttribute('aria-label', I18n.format('FilterChats', true));
 }
 
+export function applySidebarBackButtonAccessibility(button: HTMLElement) {
+  applyAttachButtonAccessibility(button);
+  button.setAttribute('aria-label', I18n.format('SidebarBack', true));
+}
+
+export function applySidebarToolsButtonAccessibility(button: HTMLElement) {
+  button.setAttribute('aria-label', I18n.format('SidebarMenu', true));
+  if(!(button instanceof HTMLButtonElement)) {
+    button.setAttribute('role', 'button');
+  }
+  if(!button.hasAttribute('tabindex')) {
+    button.tabIndex = 0;
+  }
+}
+
+export function applySidebarSearchTriggerAccessibility(trigger: HTMLElement) {
+  applyAttachButtonAccessibility(trigger);
+  trigger.setAttribute('aria-label', I18n.format('Search', true));
+}
+
+export function applyInputSearchAccessibility(inputSearch: {
+  input: HTMLInputElement,
+  clearBtn: HTMLElement,
+  searchIcon: HTMLElement,
+  backBtn?: HTMLElement | null
+}) {
+  inputSearch.input.setAttribute('aria-label', I18n.format('Search', true));
+  inputSearch.clearBtn.setAttribute('aria-label', I18n.format('ClearButton', true));
+  hideFromAccessibilityTree(inputSearch.searchIcon);
+  if(inputSearch.backBtn) {
+    inputSearch.backBtn.setAttribute('aria-label', I18n.format('SidebarBack', true));
+  }
+}
+
+export function applyArchiveDialogAccessibility(element: HTMLElement, state: DialogRowAccessibilityState) {
+  applyDialogRowAccessibility(element, state);
+  element.tabIndex = 0;
+
+  element.querySelectorAll('.row-title-row, .row-subtitle-row, .row-media').forEach(hideFromAccessibilityTree);
+}
+
 export function applyMessagesFeedLandmark(element: HTMLElement, label?: string) {
   element.setAttribute('role', 'region');
   element.setAttribute('aria-label', label || I18n.format('KeyboardShortcuts.Section.Messages', true));
