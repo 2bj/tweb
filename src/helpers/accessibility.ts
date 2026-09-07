@@ -425,7 +425,7 @@ export function createDialogChatMenuButton(onOpen: (event: MouseEvent) => void) 
   attachClickEvent(button, (event) => {
     cancelEvent(event);
     onOpen(event);
-  });
+  }, {ignoreMove: true});
 
   return button;
 }

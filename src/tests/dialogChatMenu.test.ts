@@ -86,6 +86,7 @@ vi.mock('@lib/langPack', () => ({
 }));
 
 import DialogsContextMenu from '@components/dialogsContextMenu';
+import * as clickEvent from '@helpers/dom/clickEvent';
 import {
   createDialogChatMenuButton,
   shouldShowDialogChatMenu,
@@ -149,6 +150,22 @@ describe('dialog chat menu button', () => {
     expect(inactiveButton.hidden).toBe(true);
     expect(activeButton.tabIndex).toBe(0);
     expect(inactiveButton.tabIndex).toBe(-1);
+  });
+
+  it('uses ignoreMove so mousedown stopPropagation does not swallow the menu click', () => {
+    const attachSpy = vi.spyOn(clickEvent, 'attachClickEvent');
+
+    try {
+      createDialogChatMenuButton(vi.fn());
+
+      expect(attachSpy).toHaveBeenCalledWith(
+        expect.any(HTMLButtonElement),
+        expect.any(Function),
+        expect.objectContaining({ignoreMove: true})
+      );
+    } finally {
+      attachSpy.mockRestore();
+    }
   });
 
   it('opens the shared dialogs context menu from the row button', () => {
