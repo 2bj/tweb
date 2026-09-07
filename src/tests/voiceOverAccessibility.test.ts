@@ -213,7 +213,7 @@ describe('voiceOver accessibility helpers', () => {
     const input = document.createElement('div');
     input.contentEditable = 'true';
     const send = document.createElement('button');
-    const attach = document.createElement('button');
+    const attach = document.createElement('attach-menu-button');
 
     applyMessagesFeedLandmark(feed, 'Alice, Messages');
     applyComposerLandmark(composer);
@@ -228,7 +228,17 @@ describe('voiceOver accessibility helpers', () => {
     expect(input.getAttribute('role')).toBe('textbox');
     expect(input.getAttribute('aria-label')).toBe('Message');
     expect(send.getAttribute('aria-label')).toBe('Send');
-    expect(attach.getAttribute('aria-label')).toBe('Add');
+    expect(attach.getAttribute('aria-label')).toBe('Attach');
+    expect(attach.getAttribute('role')).toBe('button');
+    expect(attach.tabIndex).toBe(0);
+  });
+
+  it('keeps native button semantics when the attach control is already a button', () => {
+    const attach = document.createElement('button');
+    applyAttachButtonAccessibility(attach);
+
+    expect(attach.getAttribute('aria-label')).toBe('Attach');
+    expect(attach.getAttribute('role')).toBeNull();
   });
 
   it('labels date bubbles as headings', () => {

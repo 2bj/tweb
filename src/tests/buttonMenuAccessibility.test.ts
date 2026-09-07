@@ -72,6 +72,7 @@ describe('ButtonMenu keyboard accessibility', () => {
     expect(heading.tabIndex).toBe(-1);
     expect(item.getAttribute('role')).toBe('button');
     expect(item.tabIndex).toBe(0);
+    expect(item.getAttribute('aria-label')).toBeNull();
 
     expect(pressKey(item, 'Enter').defaultPrevented).toBe(true);
     expect(pressKey(item, ' ').defaultPrevented).toBe(true);

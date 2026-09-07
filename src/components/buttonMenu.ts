@@ -5,7 +5,7 @@ import {AttachClickOptions, attachClickEvent, simulateClickEvent} from '@helpers
 import findUpClassName from '@helpers/dom/findUpClassName';
 import setInnerHTML from '@helpers/dom/setInnerHTML';
 import ListenerSetter from '@helpers/listenerSetter';
-import {_i18n, FormatterArguments, i18n, LangPackKey} from '@lib/langPack';
+import I18n, {_i18n, FormatterArguments, i18n, LangPackKey} from '@lib/langPack';
 import CheckboxField from '@components/checkboxField';
 import {Chat, Document, User} from '@layer';
 import {IS_MOBILE} from '@environment/userAgent';
@@ -306,11 +306,14 @@ export function ButtonMenuSync({listenerSetter, buttons, radioGroups}: {
   // composite ARIA menu pattern, which would also require roving focus and
   // arrow-key navigation. Native form controls own their focus; only plain
   // action rows need button semantics and delegated keyboard activation.
-  buttons.forEach(({element, onClick, checkboxField}) => {
+  buttons.forEach(({element, onClick, checkboxField, text, textArgs}) => {
     if(!onClick || checkboxField || !element.classList.contains('btn-menu-item')) return;
 
     element.setAttribute('role', 'button');
     element.tabIndex = 0;
+    if(text) {
+      element.setAttribute('aria-label', I18n.format(text, true, textArgs));
+    }
   });
 
   const add = listenerSetter ? listenerSetter.add(el) : el.addEventListener.bind(el);

@@ -27,7 +27,7 @@ export function ButtonMenuToggleHandler({
   const add = options?.listenerSetter ? options.listenerSetter.add(el) : el.addEventListener.bind(el);
 
   add(CLICK_EVENT_NAME, (e: Event) => {
-    if(!el.classList.contains('btn-menu-toggle') || hasMouseMovedSinceDown(e)) return false;
+    if(!el.classList.contains('btn-menu-toggle') || (!options?.ignoreMove && hasMouseMovedSinceDown(e))) return false;
 
     cancelEvent(e);
 
@@ -92,7 +92,8 @@ export default function ButtonMenuToggle({
   noIcon,
   icon = 'more',
   appendTo,
-  positionPadding
+  positionPadding,
+  ignoreMove
 }: {
   buttonOptions?: Parameters<typeof ButtonIcon>[1],
   listenerSetter?: ListenerSetter,
@@ -106,7 +107,8 @@ export default function ButtonMenuToggle({
   onCloseAfter?: () => void,
   noIcon?: boolean,
   icon?: (string & {}) | Icon,
-  positionPadding?: MenuPositionPadding
+  positionPadding?: MenuPositionPadding,
+  ignoreMove?: boolean
 }) {
   if(buttonOptions) {
     buttonOptions.asDiv = true;
@@ -184,7 +186,8 @@ export default function ButtonMenuToggle({
       return _element
     },
     options: {
-      listenerSetter: attachListenerSetter
+      listenerSetter: attachListenerSetter,
+      ignoreMove
     },
     onClose: () => {
       ++tempId;
