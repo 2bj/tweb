@@ -35,6 +35,7 @@ import {
   handlePairedColumnWheelEvent,
   relocateChatListScrollControls,
   rememberPairedColumnScrollPositions,
+  scrollBothColumnsIndependently,
   scrollChatListContainer,
   scrollSyncedColumns
 } from '@helpers/accessibility';
@@ -341,10 +342,39 @@ describe('chat list scroll accessibility', () => {
       applyChatListScrollAccessibility(container);
       rememberPairedColumnScrollPositions();
 
-      const event = new WheelEvent('wheel', {deltaY: 400, deltaMode: WheelEvent.DOM_DELTA_PIXEL});
+      const event = new WheelEvent('wheel', {
+        deltaY: 400,
+        deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+        cancelable: true
+      });
       Object.defineProperty(event, 'currentTarget', {value: messages});
       handlePairedColumnWheelEvent(event);
 
+      expect(container.scrollTop).toBe(200);
+      expect(messages.scrollTop).toBe(400);
+    });
+
+    it('keeps paging the chat list after the open chat hits the bottom', () => {
+      applyChatListScrollAccessibility(container);
+      messages.scrollTop = 1600;
+      rememberPairedColumnScrollPositions();
+
+      const event = new WheelEvent('wheel', {
+        deltaY: 400,
+        deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+        cancelable: true
+      });
+      Object.defineProperty(event, 'currentTarget', {value: messages});
+      handlePairedColumnWheelEvent(event);
+
+      expect(messages.scrollTop).toBe(1600);
+      expect(container.scrollTop).toBe(200);
+    });
+
+    it('pages each column on its own through scrollBothColumnsIndependently', () => {
+      messages.scrollTop = 1600;
+      scrollBothColumnsIndependently('down', container);
+      expect(messages.scrollTop).toBe(1600);
       expect(container.scrollTop).toBe(200);
     });
 

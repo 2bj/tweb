@@ -138,6 +138,78 @@ export function isPageLikeColumnScroll(element: HTMLElement, delta: number) {
   return abs >= Math.max(64, page * 0.2) && abs <= page * 1.5;
 }
 
+export function isColumnAtScrollLimit(element: HTMLElement, direction: 'up' | 'down') {
+  const maxScrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
+  if(direction === 'up') {
+    return element.scrollTop <= 1;
+  }
+
+  return element.scrollTop >= maxScrollTop - 1;
+}
+
+export function scrollBothColumnsIndependently(direction: 'up' | 'down', chatList?: HTMLElement) {
+  pairedColumnScrollLock++;
+  try {
+    const list = getActiveChatListContainer() ?? chatList;
+    const messages = getActiveMessagesScrollContainer();
+    if(list) {
+      scrollChatListContainer(list, direction);
+    }
+    if(messages && messages !== list) {
+      scrollChatListContainer(messages, direction);
+    }
+    rememberPairedColumnScrollPositions();
+  } finally {
+    pairedColumnScrollLock--;
+  }
+}
+
+function isTypingScrollTarget(target: EventTarget | null) {
+  if(!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if(target.isContentEditable) {
+    return true;
+  }
+
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
+export function handleIndependentColumnPageKey(event: KeyboardEvent) {
+  if(event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+    return;
+  }
+
+  if(event.key !== 'PageDown' && event.key !== 'PageUp') {
+    return;
+  }
+
+  if(isTypingScrollTarget(event.target) || isTypingScrollTarget(document.activeElement)) {
+    return;
+  }
+
+  const active = document.activeElement;
+  if(active instanceof HTMLElement && active.closest('.folders-scrollable')) {
+    return;
+  }
+
+  cancelEvent(event);
+  scrollBothColumnsIndependently(event.key === 'PageDown' ? 'down' : 'up');
+}
+
+let independentColumnPageKeysBound = false;
+
+function ensureIndependentColumnPageKeys() {
+  if(independentColumnPageKeysBound) {
+    return;
+  }
+
+  independentColumnPageKeysBound = true;
+  document.addEventListener('keydown', handleIndependentColumnPageKey, true);
+}
+
 export function handlePairedColumnScrollEvent(event: Event) {
   const element = (
     event.currentTarget instanceof HTMLElement && isPairedColumnScrollable(event.currentTarget) ?
@@ -187,35 +259,30 @@ export function handlePairedColumnWheelEvent(event: WheelEvent) {
     return;
   }
 
+  if(!event.deltaY) {
+    return;
+  }
+
+  const direction: 'up' | 'down' = event.deltaY < 0 ? 'up' : 'down';
+
   const pageLike = event.deltaMode === WheelEvent.DOM_DELTA_PAGE ||
     Math.abs(event.deltaY) >= Math.max(64, element.clientHeight * 0.2);
-  if(!pageLike) {
+  if(!pageLike && !isColumnAtScrollLimit(element, direction)) {
     return;
   }
 
-  const other = getPairedColumnScrollTarget(element);
-  if(!other || other === element) {
-    return;
+  if(event.cancelable) {
+    cancelEvent(event);
   }
 
-  pairedColumnScrollLock++;
-  try {
-    scrollChatListContainer(other, event.deltaY > 0 ? 'down' : 'up');
-    pairedColumnScrollTops.set(other, other.scrollTop);
-  } finally {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        pairedColumnScrollLock--;
-        rememberPairedColumnScrollPositions();
-      });
-    });
-  }
+  scrollBothColumnsIndependently(direction);
 }
 
 export function bindPairedColumnScrollSource(element: HTMLElement) {
   element.addEventListener('scroll', handlePairedColumnScrollEvent, {passive: true});
-  element.addEventListener('wheel', handlePairedColumnWheelEvent, {passive: true});
+  element.addEventListener('wheel', handlePairedColumnWheelEvent, {passive: false});
   pairedColumnScrollTops.set(element, element.scrollTop);
+  ensureIndependentColumnPageKeys();
 }
 
 export function unbindPairedColumnScrollSource(element: HTMLElement) {
@@ -225,19 +292,14 @@ export function unbindPairedColumnScrollSource(element: HTMLElement) {
 }
 
 export function scrollSyncedColumns(chatList: HTMLElement, direction: ChatListScrollDirection) {
+  if(direction === 'up' || direction === 'down') {
+    scrollBothColumnsIndependently(direction, chatList);
+    return;
+  }
+
   pairedColumnScrollLock++;
   try {
     scrollChatListContainer(chatList, direction);
-
-    if(direction !== 'up' && direction !== 'down') {
-      return;
-    }
-
-    const messages = getActiveMessagesScrollContainer();
-    if(messages && messages !== chatList) {
-      scrollChatListContainer(messages, direction);
-    }
-
     rememberPairedColumnScrollPositions();
   } finally {
     pairedColumnScrollLock--;
