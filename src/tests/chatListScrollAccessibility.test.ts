@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('@components/wrappers/getPeerTitle', () => ({
   default: vi.fn()
@@ -31,8 +31,12 @@ vi.mock('@lib/langPack', () => ({
 import {
   applyChatListScrollAccessibility,
   handleChatListScrollKeydown,
+  handlePairedColumnScrollEvent,
+  handlePairedColumnWheelEvent,
   relocateChatListScrollControls,
-  scrollChatListContainer
+  rememberPairedColumnScrollPositions,
+  scrollChatListContainer,
+  scrollSyncedColumns
 } from '@helpers/accessibility';
 
 function pressKey(element: HTMLElement, key: string) {
@@ -57,6 +61,10 @@ describe('chat list scroll accessibility', () => {
 
     host.append(container);
     document.body.append(host);
+  });
+
+  afterEach(() => {
+    host.remove();
   });
 
   it('makes the scroll container focusable and adds visible named scroll controls', () => {
@@ -248,6 +256,107 @@ describe('chat list scroll accessibility', () => {
 
     expect(handleChatListScrollKeydown(event, container)).toBe(false);
     expect(container.scrollTop).toBe(100);
+  });
+
+  describe('synced with the open chat', () => {
+    let messages: HTMLDivElement;
+    let column: HTMLDivElement;
+
+    beforeEach(() => {
+      host.id = 'folders-container';
+
+      column = document.createElement('div');
+      column.id = 'column-center';
+
+      const chat = document.createElement('div');
+      chat.className = 'chat active';
+
+      messages = document.createElement('div');
+      messages.className = 'scrollable bubbles-scrollable';
+      Object.defineProperty(messages, 'clientHeight', {value: 400, configurable: true});
+      Object.defineProperty(messages, 'scrollHeight', {value: 2000, configurable: true});
+      messages.scrollTop = 200;
+
+      chat.append(messages);
+      column.append(chat);
+      document.body.append(column);
+    });
+
+    afterEach(() => {
+      column.remove();
+    });
+
+    it('scrolls the chat list and the message feed together on Scroll down and Scroll up', () => {
+      applyChatListScrollAccessibility(container);
+
+      const downButton = host.querySelector('.chatlist-scroll-button-down') as HTMLButtonElement;
+      const upButton = host.querySelector('.chatlist-scroll-button-up') as HTMLButtonElement;
+
+      downButton.click();
+      expect(container.scrollTop).toBe(200);
+      expect(messages.scrollTop).toBe(400);
+
+      upButton.click();
+      expect(container.scrollTop).toBe(100);
+      expect(messages.scrollTop).toBe(200);
+    });
+
+    it('keeps Home and End on the chat list only', () => {
+      applyChatListScrollAccessibility(container);
+      container.focus();
+
+      pressKey(container, 'End');
+      expect(container.scrollTop).toBe(1000);
+      expect(messages.scrollTop).toBe(200);
+    });
+
+    it('scrolls both columns through scrollSyncedColumns', () => {
+      scrollSyncedColumns(container, 'down');
+      expect(container.scrollTop).toBe(200);
+      expect(messages.scrollTop).toBe(400);
+    });
+
+    it('moves the chat list when Voice Control pages the open chat', () => {
+      applyChatListScrollAccessibility(container);
+      rememberPairedColumnScrollPositions();
+
+      messages.scrollTop = 500;
+      handlePairedColumnScrollEvent({target: messages} as unknown as Event);
+
+      expect(container.scrollTop).toBe(200);
+      expect(messages.scrollTop).toBe(500);
+    });
+
+    it('ignores jumping to the bottom of a newly opened chat', () => {
+      applyChatListScrollAccessibility(container);
+      rememberPairedColumnScrollPositions();
+
+      messages.scrollTop = 1800;
+      handlePairedColumnScrollEvent({target: messages} as unknown as Event);
+
+      expect(container.scrollTop).toBe(100);
+    });
+
+    it('moves the chat list when the open chat gets a page-sized wheel', () => {
+      applyChatListScrollAccessibility(container);
+      rememberPairedColumnScrollPositions();
+
+      const event = new WheelEvent('wheel', {deltaY: 400, deltaMode: WheelEvent.DOM_DELTA_PIXEL});
+      Object.defineProperty(event, 'currentTarget', {value: messages});
+      handlePairedColumnWheelEvent(event);
+
+      expect(container.scrollTop).toBe(200);
+    });
+
+    it('ignores small chat scrolls so a wheel tick does not move the list', () => {
+      applyChatListScrollAccessibility(container);
+      rememberPairedColumnScrollPositions();
+
+      messages.scrollTop = 220;
+      handlePairedColumnScrollEvent({target: messages} as unknown as Event);
+
+      expect(container.scrollTop).toBe(100);
+    });
   });
 });
 

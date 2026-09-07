@@ -87,6 +87,163 @@ export function scrollChatListContainer(container: HTMLElement, direction: ChatL
   container.scrollTop = Math.min(maxScrollTop, Math.max(0, container.scrollTop + delta));
 }
 
+export function getActiveMessagesScrollContainer(): HTMLElement | null {
+  const column = document.getElementById('column-center');
+  if(!column) {
+    return null;
+  }
+
+  const activeChat = column.querySelector('.chat.active') ?? column;
+  return activeChat.querySelector('.bubbles-scrollable') as HTMLElement | null;
+}
+
+export function getActiveChatListContainer(): HTMLElement | null {
+  return document.querySelector('#folders-container .folders-scrollable.active') as HTMLElement | null;
+}
+
+const pairedColumnScrollTops = new WeakMap<HTMLElement, number>();
+let pairedColumnScrollLock = 0;
+
+export function rememberPairedColumnScrollPositions() {
+  const list = getActiveChatListContainer();
+  const messages = getActiveMessagesScrollContainer();
+  if(list) {
+    pairedColumnScrollTops.set(list, list.scrollTop);
+  }
+  if(messages) {
+    pairedColumnScrollTops.set(messages, messages.scrollTop);
+  }
+}
+
+function isPairedColumnScrollable(element: HTMLElement) {
+  return element.classList.contains('bubbles-scrollable') ||
+    (element.classList.contains('folders-scrollable') && element.classList.contains('active'));
+}
+
+function getPairedColumnScrollTarget(source: HTMLElement): HTMLElement | null {
+  if(source.classList.contains('bubbles-scrollable')) {
+    return getActiveChatListContainer();
+  }
+
+  if(source.classList.contains('folders-scrollable')) {
+    return getActiveMessagesScrollContainer();
+  }
+
+  return null;
+}
+
+export function isPageLikeColumnScroll(element: HTMLElement, delta: number) {
+  const abs = Math.abs(delta);
+  const page = element.clientHeight;
+  return abs >= Math.max(64, page * 0.2) && abs <= page * 1.5;
+}
+
+export function handlePairedColumnScrollEvent(event: Event) {
+  const element = (
+    event.currentTarget instanceof HTMLElement && isPairedColumnScrollable(event.currentTarget) ?
+      event.currentTarget :
+      event.target
+  );
+  if(!(element instanceof HTMLElement) || !isPairedColumnScrollable(element)) {
+    return;
+  }
+
+  const top = element.scrollTop;
+  const previous = pairedColumnScrollTops.get(element);
+  pairedColumnScrollTops.set(element, top);
+
+  if(pairedColumnScrollLock || previous === undefined) {
+    return;
+  }
+
+  const delta = top - previous;
+  if(!isPageLikeColumnScroll(element, delta)) {
+    return;
+  }
+
+  const other = getPairedColumnScrollTarget(element);
+  if(!other || other === element) {
+    return;
+  }
+
+  pairedColumnScrollLock++;
+  try {
+    scrollChatListContainer(other, delta > 0 ? 'down' : 'up');
+    pairedColumnScrollTops.set(other, other.scrollTop);
+  } finally {
+    pairedColumnScrollLock--;
+  }
+}
+
+export function handlePairedColumnWheelEvent(event: WheelEvent) {
+  if(pairedColumnScrollLock) {
+    return;
+  }
+
+  const element = event.currentTarget instanceof HTMLElement && isPairedColumnScrollable(event.currentTarget) ?
+    event.currentTarget :
+    event.target;
+  if(!(element instanceof HTMLElement) || !isPairedColumnScrollable(element)) {
+    return;
+  }
+
+  const pageLike = event.deltaMode === WheelEvent.DOM_DELTA_PAGE ||
+    Math.abs(event.deltaY) >= Math.max(64, element.clientHeight * 0.2);
+  if(!pageLike) {
+    return;
+  }
+
+  const other = getPairedColumnScrollTarget(element);
+  if(!other || other === element) {
+    return;
+  }
+
+  pairedColumnScrollLock++;
+  try {
+    scrollChatListContainer(other, event.deltaY > 0 ? 'down' : 'up');
+    pairedColumnScrollTops.set(other, other.scrollTop);
+  } finally {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        pairedColumnScrollLock--;
+        rememberPairedColumnScrollPositions();
+      });
+    });
+  }
+}
+
+export function bindPairedColumnScrollSource(element: HTMLElement) {
+  element.addEventListener('scroll', handlePairedColumnScrollEvent, {passive: true});
+  element.addEventListener('wheel', handlePairedColumnWheelEvent, {passive: true});
+  pairedColumnScrollTops.set(element, element.scrollTop);
+}
+
+export function unbindPairedColumnScrollSource(element: HTMLElement) {
+  element.removeEventListener('scroll', handlePairedColumnScrollEvent);
+  element.removeEventListener('wheel', handlePairedColumnWheelEvent);
+  pairedColumnScrollTops.delete(element);
+}
+
+export function scrollSyncedColumns(chatList: HTMLElement, direction: ChatListScrollDirection) {
+  pairedColumnScrollLock++;
+  try {
+    scrollChatListContainer(chatList, direction);
+
+    if(direction !== 'up' && direction !== 'down') {
+      return;
+    }
+
+    const messages = getActiveMessagesScrollContainer();
+    if(messages && messages !== chatList) {
+      scrollChatListContainer(messages, direction);
+    }
+
+    rememberPairedColumnScrollPositions();
+  } finally {
+    pairedColumnScrollLock--;
+  }
+}
+
 export function handleChatListScrollKeydown(event: KeyboardEvent, container: HTMLElement) {
   if(document.activeElement !== container) {
     return false;
@@ -114,7 +271,11 @@ export function handleChatListScrollKeydown(event: KeyboardEvent, container: HTM
       return false;
   }
 
-  scrollChatListContainer(container, direction);
+  if(direction === 'up' || direction === 'down') {
+    scrollSyncedColumns(container, direction);
+  } else {
+    scrollChatListContainer(container, direction);
+  }
   cancelEvent(event);
   return true;
 }
@@ -148,6 +309,8 @@ export function relocateChatListScrollControls(container: HTMLElement) {
 
 export function applyChatListScrollAccessibility(container: HTMLElement) {
   container.tabIndex = 0;
+  bindPairedColumnScrollSource(container);
+  rememberPairedColumnScrollPositions();
 
   const onKeyDown = (event: KeyboardEvent) => {
     handleChatListScrollKeydown(event, container);
@@ -173,8 +336,8 @@ export function applyChatListScrollAccessibility(container: HTMLElement) {
   ripple(upButton);
   ripple(downButton);
 
-  upButton.addEventListener('click', () => scrollChatListContainer(container, 'up'));
-  downButton.addEventListener('click', () => scrollChatListContainer(container, 'down'));
+  upButton.addEventListener('click', () => scrollSyncedColumns(container, 'up'));
+  downButton.addEventListener('click', () => scrollSyncedColumns(container, 'down'));
 
   controls.append(upButton, downButton);
   chatListScrollControlsByContainer.set(container, controls);
@@ -191,6 +354,7 @@ export function applyChatListScrollAccessibility(container: HTMLElement) {
 
   return () => {
     container.removeEventListener('keydown', onKeyDown);
+    unbindPairedColumnScrollSource(container);
     controls.remove();
     chatListScrollControlsByContainer.delete(container);
     container.removeAttribute('tabindex');

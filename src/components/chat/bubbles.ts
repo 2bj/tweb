@@ -251,6 +251,7 @@ import getPeerTitle from '@components/wrappers/getPeerTitle';
 import {
   applyBubbleAccessibility,
   applyMessagesFeedLandmark,
+  bindPairedColumnScrollSource,
   updateMessagesFeedLandmark
 } from '@helpers/accessibility';
 import {appendMessageMenuButton, shouldShowMessageMenuButton} from '@components/chat/messageMenuButton';
@@ -4331,6 +4332,9 @@ export default class ChatBubbles {
 
     this.scrollable = new Scrollable(null, 'IM', /* 10300 */300);
     this.scrollable.container.classList.add('bubbles-scrollable');
+    if(!this.chat.isPreview) {
+      bindPairedColumnScrollSource(this.scrollable.container);
+    }
     this.setLoaded('top', false, false);
     this.setLoaded('bottom', false, false);
 
