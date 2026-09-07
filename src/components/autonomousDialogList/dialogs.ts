@@ -309,7 +309,6 @@ export class AutonomousDialogList extends AutonomousDialogListBase<Dialog> {
     this.scrollable = scrollable;
     this.sortedList = sortedDialogList;
     this.setIndexKey(indexKey);
-    this.bindScrollable();
     this.setupCommunityProjection();
 
     // list.classList.add('hide');

@@ -166,3 +166,55 @@ describe('chat list scroll accessibility', () => {
     expect(container.scrollTop).toBe(100);
   });
 });
+
+describe('folder tabs regression', () => {
+  function mountFolderPanel(container: HTMLElement, label: string) {
+    const panel = document.createElement('div');
+    panel.className = 'tabs-tab folders-scrollable scrollable';
+
+    const top = document.createElement('div');
+    top.className = 'chatlist-top';
+
+    const list = document.createElement('ul');
+    list.className = 'chatlist virtual-chatlist';
+    list.textContent = label;
+
+    top.append(list);
+    panel.append(top);
+    container.append(panel);
+    applyChatListScrollAccessibility(panel);
+
+    return panel;
+  }
+
+  it('resolves custom folder panels when scroll controls sit between tab panels', async() => {
+    const {getTabPanelByIndex} = await import('@helpers/dom/tabPanels');
+    const foldersContainer = document.createElement('div');
+    foldersContainer.id = 'folders-container';
+    document.body.append(foldersContainer);
+
+    mountFolderPanel(foldersContainer, 'All chats');
+    mountFolderPanel(foldersContainer, 'Work chats');
+
+    const workPanel = getTabPanelByIndex(foldersContainer, 1);
+    expect(workPanel.classList.contains('tabs-tab')).toBe(true);
+    expect(workPanel.querySelector('.virtual-chatlist')?.textContent).toBe('Work chats');
+    expect(foldersContainer.children[1].classList.contains('chatlist-scroll-controls')).toBe(true);
+  });
+
+  it('mounts scroll controls as siblings after the folder panel is attached', () => {
+    const panel = document.createElement('div');
+    panel.className = 'tabs-tab folders-scrollable scrollable';
+
+    const host = document.createElement('div');
+    host.id = 'folders-container';
+    host.append(panel);
+
+    const destroy = applyChatListScrollAccessibility(panel);
+    expect(host.querySelectorAll('.tabs-tab').length).toBe(1);
+    expect(host.querySelectorAll('.chatlist-scroll-controls').length).toBe(1);
+    expect(host.children[0]).toBe(panel);
+    expect(host.children[1]?.classList.contains('chatlist-scroll-controls')).toBe(true);
+    destroy();
+  });
+});
