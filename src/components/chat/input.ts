@@ -1273,6 +1273,7 @@ export default class ChatInput {
       buttonOptions: {noRipple: true},
       listenerSetter: this.listenerSetter,
       direction: 'top-right',
+      ignoreMove: true,
       buttons: this.attachMenuButtons,
       onOpenBefore: this.excludeParts.attachMenu ? undefined : async() => {
         const attachMenuBots = (this.chat.isMonoforum || this.editMsgId) ? [] : await this.managers.appAttachMenuBotsManager.getAttachMenuBots();

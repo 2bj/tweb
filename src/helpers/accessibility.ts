@@ -460,7 +460,11 @@ export function applySendButtonAccessibility(button: HTMLElement) {
 }
 
 export function applyAttachButtonAccessibility(button: HTMLElement) {
-  button.setAttribute('aria-label', I18n.format('Add', true));
+  button.setAttribute('aria-label', I18n.format('Attach', true));
+  if(!(button instanceof HTMLButtonElement)) {
+    button.setAttribute('role', 'button');
+    button.tabIndex = 0;
+  }
 }
 
 export function applyDateBubbleAccessibility(bubble: HTMLElement) {

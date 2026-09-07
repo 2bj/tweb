@@ -1431,6 +1431,7 @@ const lang = {
   'MessageMenu': 'Message menu',
   'ChatMenu': 'Chat menu',
   'OpenMenu': 'Open menu',
+  'Attach': 'Attach',
   'FilterNew': 'New Folder',
   'Filters': 'Folders',
   'FilterRecommended': 'Recommended Folders',
