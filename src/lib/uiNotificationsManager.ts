@@ -2,7 +2,7 @@ import type {PushNotificationObject} from '@lib/serviceWorker/push';
 import getPeerTitle from '@components/wrappers/getPeerTitle';
 import wrapMessageForReply from '@components/wrappers/messageForReply';
 import {NOTIFICATION_BADGE_PATH, NOTIFICATION_ICON_PATH} from '@config/notifications';
-import {buildUnreadFaviconDataUrl} from '@helpers/unreadFavicon';
+import {buildUnreadFaviconDataUrl, getUnreadAppIconCount} from '@helpers/unreadFavicon';
 import {IS_MOBILE} from '@environment/userAgent';
 import IS_VIBRATE_SUPPORTED from '@environment/vibrateSupport';
 import deferredPromise, {CancellablePromise} from '@helpers/cancellablePromise';
@@ -311,7 +311,10 @@ export class UiNotificationsManager {
 
     rootScope.addEventListener('folder_unread', (folder) => {
       if(folder.id === FOLDER_ID_ALL) {
-        this.syncUnreadAppIcon(folder.unreadPeerIds.size);
+        this.syncUnreadAppIcon(getUnreadAppIconCount({
+          unreadUnmutedCount: folder.unreadUnmutedPeerIds.size,
+          unreadCount: folder.unreadPeerIds.size
+        }));
       }
     });
 
@@ -841,7 +844,7 @@ export class UiNotificationsManager {
     try {
       const unread = await rootScope.managers.dialogsStorage.getFolderUnreadCount(FOLDER_ID_ALL);
       if(!this.stopped) {
-        this.syncUnreadAppIcon(unread.unreadCount);
+        this.syncUnreadAppIcon(getUnreadAppIconCount(unread));
       }
     } catch(e) {}
   }

@@ -4,6 +4,13 @@ export function formatUnreadFaviconCount(count: number) {
   return count < 100 ? '' + count : '99+';
 }
 
+export function getUnreadAppIconCount(unread: {
+  unreadUnmutedCount: number,
+  unreadCount: number
+}) {
+  return unread.unreadUnmutedCount;
+}
+
 export function buildUnreadFaviconDataUrl(count: number): string {
   if(count <= 0) {
     return '';

@@ -1,9 +1,14 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
-import {buildUnreadFaviconDataUrl, formatUnreadFaviconCount} from '@helpers/unreadFavicon';
+import {buildUnreadFaviconDataUrl, formatUnreadFaviconCount, getUnreadAppIconCount} from '@helpers/unreadFavicon';
 
 describe('unread favicon', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('counts unmuted chats, not messages and not muted chats', () => {
+    expect(getUnreadAppIconCount({unreadUnmutedCount: 3, unreadCount: 40})).toBe(3);
+    expect(getUnreadAppIconCount({unreadUnmutedCount: 0, unreadCount: 12})).toBe(0);
   });
 
   it('caps the drawn count at 99+', () => {
