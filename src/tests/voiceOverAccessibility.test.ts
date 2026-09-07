@@ -67,6 +67,18 @@ describe('voiceOver accessibility helpers', () => {
     mocks.getPeerTitle.mockResolvedValue('Alice');
   });
 
+  const createChatlistRow = (innerHTML: string, extraClass = '') => {
+    const row = document.createElement('div');
+    row.className = ['chatlist-chat', 'row', extraClass].filter(Boolean).join(' ');
+    row.dataset.peerId = '1';
+    row.innerHTML = innerHTML;
+    return row;
+  };
+
+  const dialogChatLink = (row: HTMLElement) => {
+    return row.querySelector('.dialog-chat-link') as HTMLAnchorElement | null;
+  };
+
   it('builds concise dialog accessible names with unread and muted state', () => {
     expect(buildDialogAccessibleName({
       title: 'Telegram',
@@ -96,13 +108,11 @@ describe('voiceOver accessibility helpers', () => {
 
   it('marks chat lists and dialog rows with list semantics and aria-current', () => {
     const list = document.createElement('ul');
-    const row = document.createElement('a');
-    row.className = 'chatlist-chat row';
-    row.innerHTML = `
+    const row = createChatlistRow(`
       <span class="peer-title">Bob</span>
       <div class="dialog-subtitle"><span class="dialog-subtitle-span">See you soon</span></div>
       <span class="message-time">4:20 PM</span>
-    `;
+    `);
     list.append(row);
 
     applyChatListAccessibility(list);
@@ -113,11 +123,14 @@ describe('voiceOver accessibility helpers', () => {
       isActive: true
     });
 
+    const link = dialogChatLink(row);
     expect(list.getAttribute('role')).toBe('list');
     expect(row.getAttribute('role')).toBe('listitem');
     expect(row.getAttribute('aria-current')).toBe('true');
-    expect(row.getAttribute('aria-label')).toContain('Bob');
-    expect(row.getAttribute('aria-label')).toContain('See you soon');
+    expect(link).not.toBeNull();
+    expect(link.href).toContain('#1');
+    expect(link.querySelector('.dialog-a11y-label')?.textContent).toContain('Bob');
+    expect(link.querySelector('.dialog-a11y-label')?.textContent).toContain('See you soon');
   });
 
   it('marks virtual chatlists from SortedDialogList with role=list (regression)', () => {
@@ -131,20 +144,19 @@ describe('voiceOver accessibility helpers', () => {
   });
 
   it('refreshes recycled dialog rows from the live DOM', () => {
-    const row = document.createElement('a');
-    row.className = 'chatlist-chat active is-muted';
-    row.innerHTML = `
+    const row = createChatlistRow(`
       <span class="peer-title">Updated title</span>
       <div class="dialog-subtitle"><span class="dialog-subtitle-span">Draft: hello</span></div>
       <span class="message-time">Now</span>
       <div class="dialog-subtitle-badge badge dialog-subtitle-badge-unread is-visible mention">@</div>
-    `;
+    `, 'active is-muted');
 
     refreshDialogRowAccessibility(row);
 
-    expect(row.getAttribute('aria-label')).toContain('Updated title');
-    expect(row.getAttribute('aria-label')).toContain('Mention');
+    const link = dialogChatLink(row);
     expect(row.getAttribute('aria-current')).toBe('true');
+    expect(link.querySelector('.dialog-a11y-label')?.textContent).toContain('Updated title');
+    expect(link.querySelector('.dialog-a11y-label')?.textContent).toContain('Mention');
   });
 
   it('names message bubbles including media-only content and direction', async() => {
@@ -254,10 +266,7 @@ describe('voiceOver accessibility helpers', () => {
   });
 
   it('exposes one accessibility target on dialog rows without stories', () => {
-    const row = document.createElement('a');
-    row.className = 'chatlist-chat row';
-    row.href = '#1';
-    row.innerHTML = `
+    const row = createChatlistRow(`
       <div class="row-media dialog-avatar">
         <div class="avatar avatar-like avatar-54" data-peer-id="1"></div>
       </div>
@@ -272,7 +281,7 @@ describe('voiceOver accessibility helpers', () => {
         <div class="row-subtitle"><span class="dialog-subtitle-span">See you soon</span></div>
         <div class="dialog-subtitle-badge badge dialog-subtitle-badge-unread is-visible">3</div>
       </div>
-    `;
+    `);
 
     applyDialogRowAccessibility(row, {
       title: 'Alice',
@@ -282,6 +291,7 @@ describe('voiceOver accessibility helpers', () => {
     });
 
     expect(countDialogRowAccessibilityTargets(row)).toBe(1);
+    expect(dialogChatLink(row)).not.toBeNull();
     expect(row.querySelector('.row-title-row')?.getAttribute('aria-hidden')).toBeNull();
     expect(row.querySelector('.row-title-row .row-title')?.getAttribute('aria-hidden')).toBe('true');
     expect(row.querySelector('.row-subtitle-row')?.getAttribute('aria-hidden')).toBe('true');
@@ -290,10 +300,7 @@ describe('voiceOver accessibility helpers', () => {
   });
 
   it('exposes chat row and stories button when the peer has stories', () => {
-    const row = document.createElement('a');
-    row.className = 'chatlist-chat row';
-    row.href = '#1';
-    row.innerHTML = `
+    const row = createChatlistRow(`
       <div class="row-media dialog-avatar">
         <canvas class="avatar-stories-svg"></canvas>
         <div class="avatar avatar-like avatar-54 has-stories" data-peer-id="1"></div>
@@ -307,7 +314,7 @@ describe('voiceOver accessibility helpers', () => {
       <div class="row-row row-subtitle-row dialog-subtitle">
         <div class="row-subtitle"><span class="dialog-subtitle-span">New story</span></div>
       </div>
-    `;
+    `);
 
     applyDialogRowAccessibility(row, {
       title: 'Bob',
@@ -316,21 +323,22 @@ describe('voiceOver accessibility helpers', () => {
     });
 
     const storiesButton = row.querySelector('.dialog-stories-button') as HTMLButtonElement;
+    const link = dialogChatLink(row);
 
     expect(countDialogRowAccessibilityTargets(row)).toBe(2);
+    expect(link).not.toBeNull();
+    expect(link.href).toContain('#1');
     expect(storiesButton).not.toBeNull();
     expect(storiesButton.type).toBe('button');
     expect(storiesButton.getAttribute('aria-label')).toBe('Stories');
     expect(storiesButton.dataset.dialogListAction).toBe('stories');
+    expect(row.contains(storiesButton) && !link.contains(storiesButton)).toBe(true);
     expect(row.querySelector('.avatar.has-stories')?.getAttribute('aria-hidden')).toBe('true');
     expect(row.querySelector('.avatar-stories-svg')?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('drops the stories button when stories disappear from a recycled row', () => {
-    const row = document.createElement('a');
-    row.className = 'chatlist-chat row';
-    row.href = '#1';
-    row.innerHTML = `
+    const row = createChatlistRow(`
       <div class="row-media dialog-avatar">
         <div class="avatar avatar-like avatar-54 has-stories" data-peer-id="1"></div>
       </div>
@@ -340,10 +348,11 @@ describe('voiceOver accessibility helpers', () => {
       <div class="row-row row-subtitle-row dialog-subtitle">
         <div class="row-subtitle"><span class="dialog-subtitle-span">Draft</span></div>
       </div>
-    `;
+    `);
 
-    applyDialogRowHitTargets(row);
+    applyDialogRowAccessibility(row, {title: 'Bob', subtitle: 'Draft'});
     expect(row.querySelector('.dialog-stories-button')).not.toBeNull();
+    expect(countDialogRowAccessibilityTargets(row)).toBe(2);
 
     row.querySelector('.avatar')?.classList.remove('has-stories');
     applyDialogRowHitTargets(row);

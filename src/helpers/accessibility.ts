@@ -198,6 +198,8 @@ export function applyChatListScrollAccessibility(container: HTMLElement) {
 }
 
 const DIALOG_STORIES_BUTTON_CLASS = 'dialog-stories-button';
+const DIALOG_CHAT_LINK_CLASS = 'dialog-chat-link';
+const DIALOG_A11Y_LABEL_CLASS = 'dialog-a11y-label';
 
 const DIALOG_ROW_DECORATIVE_SELECTORS = [
   '.row-title-row .row-title',
@@ -272,6 +274,40 @@ function removeDialogStoriesButton(listEl: HTMLElement) {
   listEl.querySelector(`.${DIALOG_STORIES_BUTTON_CLASS}`)?.remove();
 }
 
+function applyDialogChatLink(listEl: HTMLElement, label: string) {
+  const rowIsLink = listEl.matches('a[href]');
+  let link = rowIsLink ?
+    listEl as HTMLAnchorElement :
+    listEl.querySelector(`:scope > a.${DIALOG_CHAT_LINK_CLASS}`) as HTMLAnchorElement | null;
+
+  if(!link) {
+    link = document.createElement('a');
+    link.className = DIALOG_CHAT_LINK_CLASS;
+    listEl.prepend(link);
+  }
+
+  const peerId = listEl.dataset.peerId;
+  if(link !== listEl) {
+    link.href = '#' + (peerId || '');
+  }
+
+  let name = link.querySelector(`.${DIALOG_A11Y_LABEL_CLASS}`);
+  if(label) {
+    if(!name) {
+      name = document.createElement('span');
+      name.className = DIALOG_A11Y_LABEL_CLASS;
+      link.append(name);
+    }
+    name.textContent = label;
+  } else {
+    name?.remove();
+  }
+
+  if(link !== listEl) {
+    listEl.removeAttribute('aria-label');
+  }
+}
+
 function applyDialogStoriesButton(listEl: HTMLElement) {
   const media = getDialogRowMedia(listEl);
   const hasStories = !!listEl.querySelector('.avatar.has-stories');
@@ -323,6 +359,8 @@ function applyDialogStoriesButton(listEl: HTMLElement) {
 }
 
 export function applyDialogRowHitTargets(listEl: HTMLElement) {
+  listEl.querySelector('.c-ripple')?.setAttribute('aria-hidden', 'true');
+
   for(const selector of DIALOG_ROW_DECORATIVE_SELECTORS) {
     listEl.querySelectorAll(selector).forEach(hideFromAccessibilityTree);
   }
@@ -332,13 +370,16 @@ export function applyDialogRowHitTargets(listEl: HTMLElement) {
 }
 
 export function applyDialogRowAccessibility(listEl: HTMLElement, state: DialogRowAccessibilityState) {
-  listEl.setAttribute('role', 'listitem');
-
   const label = buildDialogAccessibleName(state);
-  if(label) {
-    listEl.setAttribute('aria-label', label);
+  applyDialogChatLink(listEl, label);
+
+  // Safari VoiceOver Show Numbers only counts links/buttons. `role="listitem"` on
+  // the row `<a>` replaces the native link, so the chat disappears and only the
+  // nested stories `<button>` remains. Keep listitem on a non-link wrapper.
+  if(listEl.matches('a[href]')) {
+    listEl.removeAttribute('role');
   } else {
-    listEl.removeAttribute('aria-label');
+    listEl.setAttribute('role', 'listitem');
   }
 
   if(state.isActive) {

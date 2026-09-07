@@ -301,6 +301,28 @@ ul.chatlist {
   .row-row {
     pointer-events: none;
     position: relative; // for z-index
+    z-index: 2;
+  }
+
+  .dialog-chat-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    color: inherit;
+    text-decoration: none;
+    -webkit-user-drag: none;
+  }
+
+  .dialog-a11y-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .dialog-stories-button {

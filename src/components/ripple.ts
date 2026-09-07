@@ -32,6 +32,7 @@ function _ripple(
 
   const r = document.createElement('div');
   r.classList.add('c-ripple');
+  r.setAttribute('aria-hidden', 'true');
 
   const isSquare = elem.classList.contains('rp-square');
   if(isSquare) {
@@ -166,13 +167,18 @@ function _ripple(
   };
 
   const isRippleUnneeded = (e: Event) => {
+    const target = e.target as HTMLElement;
+    if(target.closest?.('.dialog-chat-link') && elem.contains(target)) {
+      return false;
+    }
+
     return e.target !== elem && (
-      ['BUTTON', 'A'].includes((e.target as HTMLElement).tagName) ||
-        findUpClassName(e.target as HTMLElement, 'c-ripple') !== r
+      ['BUTTON', 'A'].includes(target.tagName) ||
+        findUpClassName(target, 'c-ripple') !== r
     ) && (
       attachListenerTo === elem ||
-        !findUpAsChild(e.target as HTMLElement, attachListenerTo)
-    ) && !findUpClassName(e.target, 'checkbox-field');
+        !findUpAsChild(target, attachListenerTo)
+    ) && !findUpClassName(target, 'checkbox-field');
   };
 
   // TODO: rename this variable

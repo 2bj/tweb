@@ -22,6 +22,7 @@ import {MyDraftMessage} from '@appManagers/appDraftsManager';
 import {MOUNT_CLASS_TO} from '@config/debug';
 import PeerTitle, {changeTitleEmojiColor} from '@components/peerTitle';
 import I18n, {FormatterArguments, i18n, LangPackKey, _i18n} from '@lib/langPack';
+import findUpClassName from '@helpers/dom/findUpClassName';
 import findUpTag from '@helpers/dom/findUpTag';
 import lottieLoader from '@lib/lottie/lottieLoader';
 import wrapPhoto from '@components/wrappers/photo';
@@ -135,17 +136,13 @@ import {
   relocateChatListScrollControls,
   shouldShowDialogChatMenu
 } from '@helpers/accessibility';
-import {
-  renderChatlistTopNotification,
-  type ChatlistTopNotificationController
-} from '@components/sidebarLeft/chatlistTopNotification';
 
 
-export const DIALOG_LIST_ELEMENT_TAG = 'A';
+export const DIALOG_LIST_ELEMENT_TAG = '.chatlist-chat';
 const DIALOG_LOAD_COUNT = 20;
 
 export function findDialogListElement(target: EventTarget) {
-  return findUpTag(target, DIALOG_LIST_ELEMENT_TAG);
+  return findUpClassName(target, 'chatlist-chat');
 }
 
 export type DialogDom = {
@@ -337,7 +334,7 @@ export class DialogElement {
       subtitle: true,
       subtitleRight: true,
       noWrap: true,
-      asLink: true,
+      asLink: false,
       middleware: this.middlewareHelper?.get()
     });
 
@@ -436,9 +433,6 @@ export class DialogElement {
 
     const li = this.container;
     li.classList.add('chatlist-chat', 'chatlist-chat-' + avatarSize);
-    if(!autonomous) {
-      (li as HTMLAnchorElement).href = '#' + peerId;
-    }
     // if(rippleEnabled) {
     //   ripple(li);
     // }

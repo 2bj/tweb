@@ -41,7 +41,7 @@ import {
 
 function createManager() {
   const destroyCallbacks: VoidFunction[] = [];
-  const listEl = document.createElement('a');
+  const listEl = document.createElement('div');
   listEl.classList.add('chatlist-chat');
   const lastMessageSpan = document.createElement('span');
   const lastTimeSpan = document.createElement('span');
@@ -101,7 +101,7 @@ describe('Community dialog projection', () => {
       peerId: (123 as ChatId).toPeerId(true),
       rippleEnabled: false
     }));
-    expect(dialogElement.dom.listEl.tagName).toBe('A');
+    expect(dialogElement.dom.listEl.tagName).toBe('DIV');
     expect(dialogElement.dom.listEl.dataset.communityDialog).toBe('true');
     expect(dialogElement.dom.listEl.dataset.communityId).toBe('123');
     expect(dialogElement.dom.listEl.querySelector('.peer-title')?.textContent).toBe('Community');

@@ -647,7 +647,7 @@
       border: none;
       padding: 0;
       font: inherit;
-      color: inherit;
+      color: var(--badge-text-color);
 
       html.no-touch & {
         opacity: 1;
