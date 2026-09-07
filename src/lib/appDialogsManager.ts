@@ -124,6 +124,10 @@ import ListenerSetter from '@helpers/listenerSetter';
 import type PopupPeer from '@components/popups/peer';
 import {toastNew} from '@components/toast';
 import {
+  renderChatlistTopNotification,
+  type ChatlistTopNotificationController
+} from '@components/sidebarLeft/chatlistTopNotification';
+import {
   applyChatListAccessibility,
   applyChatNavigationLandmark,
   createDialogChatMenuButton,

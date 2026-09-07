@@ -88,7 +88,8 @@ vi.mock('@lib/langPack', () => ({
 import DialogsContextMenu from '@components/dialogsContextMenu';
 import {
   createDialogChatMenuButton,
-  shouldShowDialogChatMenu
+  shouldShowDialogChatMenu,
+  syncDialogChatMenuButton
 } from '@helpers/accessibility';
 import {simulateClickEvent} from '@helpers/dom/clickEvent';
 
@@ -118,6 +119,11 @@ describe('dialog chat menu button', () => {
     expect(button.classList.contains('dialog-chat-menu-button')).toBe(true);
     expect(button.dataset.dialogListAction).toBe('true');
     expect(button.getAttribute('aria-label')).toBe('ChatMenu');
+    expect(button.hidden).toBe(true);
+
+    row.classList.add('active');
+    syncDialogChatMenuButton(row, button);
+    expect(button.hidden).toBe(false);
 
     simulateClickEvent(button);
 
@@ -125,10 +131,30 @@ describe('dialog chat menu button', () => {
     expect(row.contains(button)).toBe(true);
   });
 
+  it('hides the chat menu on inactive rows and shows it on the active row', () => {
+    const activeRow = document.createElement('a');
+    activeRow.classList.add('chatlist-chat', 'active');
+    const inactiveRow = document.createElement('a');
+    inactiveRow.classList.add('chatlist-chat');
+
+    const activeButton = createDialogChatMenuButton(vi.fn());
+    const inactiveButton = createDialogChatMenuButton(vi.fn());
+    activeRow.append(activeButton);
+    inactiveRow.append(inactiveButton);
+
+    syncDialogChatMenuButton(activeRow, activeButton);
+    syncDialogChatMenuButton(inactiveRow, inactiveButton);
+
+    expect(activeButton.hidden).toBe(false);
+    expect(inactiveButton.hidden).toBe(true);
+    expect(activeButton.tabIndex).toBe(0);
+    expect(inactiveButton.tabIndex).toBe(-1);
+  });
+
   it('opens the shared dialogs context menu from the row button', () => {
     const list = document.createElement('ul');
     const row = document.createElement('a');
-    row.classList.add('chatlist-chat');
+    row.classList.add('chatlist-chat', 'active');
     row.dataset.peerId = '1';
     list.append(row);
 
@@ -139,6 +165,7 @@ describe('dialog chat menu button', () => {
       menu.openFromEvent(event);
     });
     row.append(button);
+    syncDialogChatMenuButton(row, button);
 
     simulateClickEvent(button);
 

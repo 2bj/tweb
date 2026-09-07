@@ -270,7 +270,8 @@ describe('voiceOver accessibility helpers', () => {
     });
 
     expect(countDialogRowAccessibilityTargets(row)).toBe(1);
-    expect(row.querySelector('.row-title-row')?.getAttribute('aria-hidden')).toBe('true');
+    expect(row.querySelector('.row-title-row')?.getAttribute('aria-hidden')).toBeNull();
+    expect(row.querySelector('.row-title-row .row-title')?.getAttribute('aria-hidden')).toBe('true');
     expect(row.querySelector('.row-subtitle-row')?.getAttribute('aria-hidden')).toBe('true');
     expect(row.querySelector('.dialog-avatar')?.getAttribute('aria-hidden')).toBe('true');
     expect(row.querySelector('.dialog-stories-button')).toBeNull();

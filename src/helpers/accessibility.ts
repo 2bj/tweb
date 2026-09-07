@@ -200,7 +200,9 @@ export function applyChatListScrollAccessibility(container: HTMLElement) {
 const DIALOG_STORIES_BUTTON_CLASS = 'dialog-stories-button';
 
 const DIALOG_ROW_DECORATIVE_SELECTORS = [
-  '.row-title-row',
+  '.row-title-row .row-title',
+  '.row-title-row .message-status',
+  '.row-title-row .message-time',
   '.row-subtitle-row',
   '.avatar-badge',
   '.dialog-group-call-icon'
@@ -223,6 +225,10 @@ function hideFromAccessibilityTree(element: Element) {
 
 function isAccessibilityTarget(element: Element) {
   if(!(element instanceof HTMLElement)) {
+    return false;
+  }
+
+  if(element.hidden) {
     return false;
   }
 
@@ -322,6 +328,7 @@ export function applyDialogRowHitTargets(listEl: HTMLElement) {
   }
 
   applyDialogStoriesButton(listEl);
+  syncDialogChatMenuButton(listEl);
 }
 
 export function applyDialogRowAccessibility(listEl: HTMLElement, state: DialogRowAccessibilityState) {
@@ -382,6 +389,21 @@ export function shouldShowDialogChatMenu(options: {
   return !options.autonomous && !options.asAllChats;
 }
 
+export function syncDialogChatMenuButton(
+  listEl: HTMLElement,
+  menuButton?: HTMLButtonElement | null
+) {
+  const button = menuButton ??
+    listEl.querySelector('.dialog-chat-menu-button') as HTMLButtonElement | null;
+  if(!button) {
+    return;
+  }
+
+  const isActive = listEl.classList.contains('active');
+  button.hidden = !isActive;
+  button.tabIndex = isActive ? 0 : -1;
+}
+
 export function createDialogChatMenuButton(onOpen: (event: MouseEvent) => void) {
   const button = document.createElement('button');
   button.type = 'button';
@@ -389,6 +411,15 @@ export function createDialogChatMenuButton(onOpen: (event: MouseEvent) => void) 
   button.dataset.dialogListAction = 'true';
   button.setAttribute('aria-label', I18n.format('ChatMenu', true));
   button.append(Icon('more', 'dialog-chat-menu-button-icon'));
+  button.hidden = true;
+  button.tabIndex = -1;
+
+  button.addEventListener('mousedown', (event) => event.stopPropagation());
+  button.addEventListener('keydown', (event) => {
+    if(event.key === 'Enter' || event.key === ' ') {
+      event.stopPropagation();
+    }
+  });
 
   ripple(button);
   attachClickEvent(button, (event) => {
