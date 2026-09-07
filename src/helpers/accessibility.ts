@@ -323,18 +323,13 @@ export function applyChatListScrollAccessibility(container: HTMLElement) {
 
   const upButton = document.createElement('button');
   upButton.type = 'button';
-  upButton.className = 'btn-circle chatlist-scroll-button chatlist-scroll-button-up rp z-depth-1';
+  upButton.className = 'chatlist-scroll-button chatlist-scroll-button-up';
   upButton.setAttribute('aria-label', I18n.format('ScrollChatsUp', true));
-  upButton.append(Icon('arrow_up'));
 
   const downButton = document.createElement('button');
   downButton.type = 'button';
-  downButton.className = 'btn-circle chatlist-scroll-button chatlist-scroll-button-down rp z-depth-1';
+  downButton.className = 'chatlist-scroll-button chatlist-scroll-button-down';
   downButton.setAttribute('aria-label', I18n.format('ScrollChatsDown', true));
-  downButton.append(Icon('arrow_down'));
-
-  ripple(upButton);
-  ripple(downButton);
 
   upButton.addEventListener('click', () => scrollSyncedColumns(container, 'up'));
   downButton.addEventListener('click', () => scrollSyncedColumns(container, 'down'));

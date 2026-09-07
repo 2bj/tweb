@@ -67,7 +67,7 @@ describe('chat list scroll accessibility', () => {
     host.remove();
   });
 
-  it('makes the scroll container focusable and adds visible named scroll controls', () => {
+  it('adds named scroll controls without exposing them in the accessibility tree as hidden', () => {
     host.id = 'folders-container';
     const destroy = applyChatListScrollAccessibility(container);
 
@@ -85,11 +85,11 @@ describe('chat list scroll accessibility', () => {
     expect(downButton.getAttribute('aria-hidden')).toBeNull();
     expect(upButton.getAttribute('aria-label')).toBe('ScrollChatsUp');
     expect(downButton.getAttribute('aria-label')).toBe('ScrollChatsDown');
-    expect(upButton.classList.contains('btn-circle')).toBe(true);
+    expect(upButton.classList.contains('btn-circle')).toBe(false);
     expect(upButton.classList.contains('chatlist-scroll-control')).toBe(false);
     expect(downButton.classList.contains('chatlist-scroll-control')).toBe(false);
-    expect(upButton.querySelector('[data-icon="arrow_up"]')).not.toBeNull();
-    expect(downButton.querySelector('[data-icon="arrow_down"]')).not.toBeNull();
+    expect(upButton.querySelector('.c-ripple')).toBeNull();
+    expect(downButton.querySelector('.c-ripple')).toBeNull();
     expect(container.contains(controls)).toBe(false);
     expect(container.nextElementSibling).toBe(controls);
     expect(host.contains(controls)).toBe(true);
