@@ -1,8 +1,8 @@
 import type {PushNotificationObject} from '@lib/serviceWorker/push';
 import getPeerTitle from '@components/wrappers/getPeerTitle';
 import wrapMessageForReply from '@components/wrappers/messageForReply';
-import {FontFamily} from '@config/font';
 import {NOTIFICATION_BADGE_PATH, NOTIFICATION_ICON_PATH} from '@config/notifications';
+import {buildUnreadFaviconDataUrl} from '@helpers/unreadFavicon';
 import {IS_MOBILE} from '@environment/userAgent';
 import IS_VIBRATE_SUPPORTED from '@environment/vibrateSupport';
 import deferredPromise, {CancellablePromise} from '@helpers/cancellablePromise';
@@ -309,13 +309,11 @@ export class UiNotificationsManager {
       this.queueNotificationCancelUpTo(payload);
     });
 
-    if(this.setAppBadge) {
-      rootScope.addEventListener('folder_unread', (folder) => {
-        if(folder.id === FOLDER_ID_ALL) {
-          this.setAppBadge(folder.unreadUnmutedPeerIds.size);
-        }
-      });
-    }
+    rootScope.addEventListener('folder_unread', (folder) => {
+      if(folder.id === FOLDER_ID_ALL) {
+        this.syncUnreadAppIcon(folder.unreadPeerIds.size);
+      }
+    });
 
     createRoot((dispose) => {
       createEffect(on(() => this.settings.push, this.onPushConditionsChange));
@@ -839,6 +837,18 @@ export class UiNotificationsManager {
     }
 
     this.clearPendingNotifications(getCurrentAccount());
+
+    try {
+      const unread = await rootScope.managers.dialogsStorage.getFolderUnreadCount(FOLDER_ID_ALL);
+      if(!this.stopped) {
+        this.syncUnreadAppIcon(unread.unreadCount);
+      }
+    } catch(e) {}
+  }
+
+  private syncUnreadAppIcon(count: number) {
+    this.setAppBadge?.(count);
+    this.setFavicon(buildUnreadFaviconDataUrl(count) || undefined);
   }
 
   private onTitleInterval = async() => {
@@ -857,48 +867,6 @@ export class UiNotificationsManager {
 
     this.titleChanged = true;
     document.title = I18n.format('Notifications.Count', true, [count]);
-    // this.setFavicon('assets/img/favicon_unread.ico');
-
-    // fetch('assets/img/favicon.ico')
-    // .then((res) => res.blob())
-    // .then((blob) => {
-    // const img = document.createElement('img');
-    // img.src = URL.createObjectURL(blob);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 32 * window.devicePixelRatio;
-    canvas.height = canvas.width;
-
-    const ctx = canvas.getContext('2d');
-    ctx.beginPath();
-    ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, 2 * Math.PI, false);
-    ctx.fillStyle = '#3390ec';
-    ctx.fill();
-
-    let fontSize = 24;
-    let str = '' + count;
-    if(count < 10) {
-      fontSize = 22;
-    } else if(count < 100) {
-      fontSize = 20;
-    } else {
-      str = '99+';
-      fontSize = 16;
-    }
-
-    fontSize *= window.devicePixelRatio;
-
-    ctx.font = `700 ${fontSize}px ${FontFamily}`;
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'white';
-    ctx.fillText(str, canvas.width / 2, canvas.height * .5625);
-
-    /* const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height); */
-
-    this.setFavicon(canvas.toDataURL());
-    // });
   };
 
   private resetTitle(isBlink?: boolean) {
@@ -908,7 +876,6 @@ export class UiNotificationsManager {
 
     this.titleChanged = false;
     document.title = this.titleBackup;
-    this.setFavicon();
   }
 
   private async toggleToggler(enable = idleController.isIdle) {
