@@ -304,9 +304,10 @@
     position: absolute;
     top: 0;
     inset-inline: 0;
-    z-index: 2;
-    // Children (pending suggestion, gradient, folder tabs) flow naturally — adding a panel above
-    // the tabs just stacks instead of overlapping.
+    // Above .folders-scrollable chat rows: .dialog-avatar / .row-row are z-index 2
+    // and later in the DOM, so the same z-index here paints the list on top of the
+    // new-login / pending-suggestion notice.
+    z-index: 3;
   }
 
   .folders-tabs {

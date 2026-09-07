@@ -45,6 +45,41 @@ details: see the script header. `.claude/launch.json` wires it into Claude
 Code's preview pane; other agents run the script directly and open the printed
 URL with their own browser tooling.
 
+### Production deploy (`tg.smarticalab.com`)
+
+Hosted at **https://tg.smarticalab.com** on **`root@178.105.105.17`** (nginx +
+certbot). Web root: `/var/www/tg.smarticalab.com`. Vhost:
+`/etc/nginx/sites-available/tg.smarticalab.com` (`/assets/` → `try_files $uri =404`,
+everything else SPA `try_files`). Do **not** edit the `nurbekelgina.love`
+`default_server` on the same box. Do **not** use `build.js` / `ssh.json` for this
+host (`build.js` does `rm -rf` on `publicPath`).
+
+`vite.config.ts` has `copyPublicDir: false` and `build.sourcemap: false`. `pnpm
+build` only writes `dist/` (JS/CSS). Fonts, icons and the webmanifest live in
+`public/assets/` and `public/site*.webmanifest` — a `dist/`-only rsync with
+`--delete` serves `index.html` for missing fonts (`OTS parsing error` /
+`<!DOCTYPE`). Always overlay those public files.
+
+`pnpm` 11 needs Node `^22.18 || >=24.11`. If the shell is Node 20, prefix PATH
+with nvm 22+, e.g. `export PATH="$HOME/.nvm/versions/node/v22.23.1/bin:$PATH"`.
+
+```bash
+export PATH="$HOME/.nvm/versions/node/v22.23.1/bin:$PATH"
+pnpm build
+
+stage=/tmp/tweb-deploy
+rm -rf "$stage" && mkdir -p "$stage"
+rsync -a dist/ "$stage/"
+rsync -a public/assets/ "$stage/assets/"
+rsync -a public/changelogs/ "$stage/changelogs/"
+cp public/site.webmanifest public/site_apple.webmanifest \
+   public/snapshot.html public/version "$stage/"
+rsync -az --delete "$stage/" root@178.105.105.17:/var/www/tg.smarticalab.com/
+```
+
+SSH to this host only when the user asks to deploy or to change this nginx/certbot
+vhost — not to poke other sites on the machine.
+
 ### Popup sandbox
 
 Every popup, opened by click with mock data and **no Telegram traffic**. Two ways in:
