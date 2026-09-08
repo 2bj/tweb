@@ -121,7 +121,9 @@ import useFolders from '@stores/folders';
 import FoldersTabs from '@components/foldersTabs';
 import clamp from '@helpers/number/clamp';
 import confirmationPopup from '@components/confirmationPopup';
-import ListenerSetter from '@helpers/listenerSetter';
+import {
+  attachDialogListPointerListeners
+} from '@helpers/dialogListPointerListeners';
 import type PopupPeer from '@components/popups/peer';
 import {toastNew} from '@components/toast';
 import {
@@ -2141,21 +2143,13 @@ export class AppDialogsManager {
 
     const isOpeningStoriesDisabled = () => appSidebarLeft.isCollapsed() && !appSidebarLeft.hasSomethingOpenInside();
 
-    let willOpenStory = false;
-
-    const setWillOpenStory = (e: Event) => willOpenStory = !isOpeningStoriesDisabled() && !!getOpenStoryCallback(e.target);
     const isDialogListAction = (target: EventTarget) => {
       return !!(target as HTMLElement).closest?.('[data-dialog-list-action]');
     };
 
-    list.dataset.autonomous = '' + +autonomous;
-    list.addEventListener('mousedown', (e) => {
-      if(
-        e.button !== 0 ||
-        setWillOpenStory(e) ||
-        isDialogListAction(e.target)
-      ) {
-        return;
+    const handleListActivation = (e: Pick<MouseEvent, 'target' | 'button' | 'shiftKey' | 'ctrlKey' | 'metaKey' | 'clientX' | 'clientY'>) => {
+      if(e.button !== 0) {
+        return false;
       }
 
       this.log('dialogs click list');
@@ -2164,13 +2158,13 @@ export class AppDialogsManager {
       const archiveElem = findUpTag(target, archiveDialogTagName);
       if(archiveElem) {
         appSidebarLeft.openArchiveTab();
-        return;
+        return true;
       }
 
       const elem = findDialogListElement(target);
 
       if(!elem) {
-        return;
+        return false;
       }
 
       const peerId = elem.dataset.peerId.toPeerId();
@@ -2196,12 +2190,12 @@ export class AppDialogsManager {
           if(!IS_TOUCH_SUPPORTED) {
             simulateClickEvent(chip as HTMLElement);
           }
-          return;
+          return true;
         }
       }
 
       if(onFound?.(elem) === false) {
-        return;
+        return true;
       }
 
       const community = !peerId.isUser() ?
@@ -2214,8 +2208,8 @@ export class AppDialogsManager {
       ) {
         if(e.ctrlKey || e.metaKey) {
           this.openDialogInNewTab(elem);
-          cancelEvent(e);
-          return;
+          cancelEvent(e as MouseEvent);
+          return true;
         }
 
         const isFromRightSidebar = appSidebarRight.sidebarEl.contains(elem);
@@ -2224,7 +2218,7 @@ export class AppDialogsManager {
           isFromRightSidebar ? true : undefined,
           false
         );
-        return;
+        return true;
       }
 
       // Shift+click → floating chat preview (tdesktop-style). Bypasses chat selection and
@@ -2239,8 +2233,8 @@ export class AppDialogsManager {
           lastMsgId,
           anchor: chatPreviewAnchorFromDialogRow(elem)
         });
-        cancelEvent(e);
-        return;
+        cancelEvent(e as MouseEvent);
+        return true;
       }
 
       const peer = apiManagerProxy.getPeer(peerId);
@@ -2259,7 +2253,7 @@ export class AppDialogsManager {
         this.toggleForumTabByPeerId(peerId).then(() => {
           if(appImManager.chat?.peerId?.toChatId() !== linkedChat?.id && !mediaSizes.isLessThanFloatingLeftSidebar) openChat();
         });
-        return;
+        return true;
       }
 
 
@@ -2267,20 +2261,20 @@ export class AppDialogsManager {
         this.toggleForumTabByPeerId(peerId).then(() => {
           if(appImManager.chat?.peerId?.toUserId() !== peer.id && !mediaSizes.isLessThanFloatingLeftSidebar) openChat();
         });
-        return;
+        return true;
       }
 
       const isForum = !!elem.querySelector('.is-forum');
       if(isForum && !e.shiftKey && !lastMsgId) {
         this.toggleForumTabByPeerId(peerId, undefined, false);
-        return;
+        return true;
       }
 
       if(e.ctrlKey || e.metaKey) {
         // TODO: How about opening a monoforum in new tab?
         this.openDialogInNewTab(elem);
-        cancelEvent(e);
-        return;
+        cancelEvent(e as MouseEvent);
+        return true;
       }
 
       if(autonomous) {
@@ -2305,24 +2299,18 @@ export class AppDialogsManager {
       }
 
       openChat();
-    }, {capture: true});
+      return true;
+    };
 
-    // cancel link click
-    // ! do not change it to attachClickEvent
-    list.addEventListener('click', (e) => {
-      if(isDialogListAction(e.target)) {
-        return;
-      }
-
-      if(e.button === 0) {
-        cancelEvent(e);
-      }
-
-      if(!willOpenStory || isOpeningStoriesDisabled()) return;
-
-      const callback = getOpenStoryCallback(e.target);
-      callback?.();
-    }, {capture: true});
+    list.dataset.autonomous = '' + +autonomous;
+    attachDialogListPointerListeners({
+      list,
+      isDialogListAction,
+      setWillOpenStory: (e) => !isOpeningStoriesDisabled() && !!getOpenStoryCallback(e.target),
+      isOpeningStoriesDisabled,
+      getOpenStoryCallback,
+      handleListActivation
+    });
 
     if(withContext) {
       this.contextMenu.attach(list);
