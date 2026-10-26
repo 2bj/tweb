@@ -1,10 +1,21 @@
 import IS_TOUCH_SUPPORTED from '@environment/touchSupport';
 import EventListenerBase from '@helpers/eventListenerBase';
 import {IS_PREVIEW} from '@config/debug';
-import {getAppWindow, onAppWindowChange} from '@helpers/appWindow';
+import {bindActiveWindowListener, getAppWindow, onAppWindowChange} from '@helpers/appWindow';
 
 const FOCUS_EVENT_NAME = IS_TOUCH_SUPPORTED ? 'touchstart' : 'mousemove';
 const DO_NOT_IDLE = IS_PREVIEW; // the preview window is never focused — don't let it look idle
+
+/** Pause sticker/emoji loops after this long without input while the tab stays focused (Safari energy). */
+export const INACTIVITY_IDLE_MS = 90_000;
+
+const ACTIVITY_EVENTS = [
+  'keydown',
+  'pointerdown',
+  'wheel',
+  'touchstart',
+  FOCUS_EVENT_NAME
+] as const;
 
 export class IdleController extends EventListenerBase<{
   change: (idle: boolean) => void
@@ -15,11 +26,35 @@ export class IdleController extends EventListenerBase<{
   private focusResolve: () => void;
 
   private boundWindow: Window;
+  private inactivityTimer: number;
+  private disposeVisibilityListener: (() => void) | undefined;
+
   private onBlur = () => {
+    this.clearInactivityTimer();
     this.isIdle = true;
   };
-  private onActive = () => {
+  private onFocus = () => {
     this.isIdle = false;
+    this.resetInactivityTimer();
+  };
+  private onUserActivity = () => {
+    if(this._isIdle) {
+      this.isIdle = false;
+    }
+    this.resetInactivityTimer();
+  };
+  private onVisibilityChange = () => {
+    const doc = this.boundWindow?.document;
+    if(!doc) {
+      return;
+    }
+
+    if(doc.hidden) {
+      this.clearInactivityTimer();
+      this.isIdle = true;
+    } else if(doc.hasFocus()) {
+      this.onUserActivity();
+    }
   };
 
   constructor() {
@@ -51,21 +86,57 @@ export class IdleController extends EventListenerBase<{
     const prev = this.boundWindow;
     if(prev) {
       prev.removeEventListener('blur', this.onBlur);
-      prev.removeEventListener('focus', this.onActive);
-      prev.removeEventListener(FOCUS_EVENT_NAME, this.onActive);
+      prev.removeEventListener('focus', this.onFocus);
+      for(const eventName of ACTIVITY_EVENTS) {
+        prev.removeEventListener(eventName, this.onUserActivity);
+      }
+      this.disposeVisibilityListener?.();
+      this.disposeVisibilityListener = undefined;
     }
 
     this.boundWindow = win;
     win.addEventListener('blur', this.onBlur);
-    win.addEventListener('focus', this.onActive);
-    // * Prevent setting online after reloading page — wake on the first activity in this window
-    win.addEventListener(FOCUS_EVENT_NAME, this.onActive, {once: true, passive: true});
+    win.addEventListener('focus', this.onFocus);
+    for(const eventName of ACTIVITY_EVENTS) {
+      win.addEventListener(eventName, this.onUserActivity, {passive: true});
+    }
+
+    this.disposeVisibilityListener = bindActiveWindowListener(
+      (w) => w.document,
+      'visibilitychange',
+      this.onVisibilityChange
+    );
 
     // Moving the app INTO a window (PiP pop-in/out) is itself active use of that window — wake up so
     // animations keep playing even though the window we left has just blurred.
     if(isSwitch) {
       this.isIdle = false;
+      this.resetInactivityTimer();
+    } else if(!win.document.hidden && win.document.hasFocus()) {
+      this.resetInactivityTimer();
     }
+  }
+
+  private clearInactivityTimer() {
+    if(this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = undefined;
+    }
+  }
+
+  private resetInactivityTimer() {
+    this.clearInactivityTimer();
+    if(DO_NOT_IDLE || this._isIdle) {
+      return;
+    }
+
+    this.inactivityTimer = window.setTimeout(() => {
+      this.inactivityTimer = undefined;
+      const doc = this.boundWindow?.document;
+      if(doc && !doc.hidden) {
+        this.isIdle = true;
+      }
+    }, INACTIVITY_IDLE_MS);
   }
 
   public getFocusPromise() {
@@ -86,6 +157,11 @@ export class IdleController extends EventListenerBase<{
     }
 
     this._isIdle = value;
+    if(value) {
+      this.clearInactivityTimer();
+    } else {
+      this.resetInactivityTimer();
+    }
     this.dispatchEvent('change', value);
   }
 }

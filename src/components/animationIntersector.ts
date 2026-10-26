@@ -11,6 +11,16 @@ import {Middleware} from '@helpers/middleware';
 import safePlay from '@helpers/dom/safePlay';
 import {getAppWindow, onAppWindowChange} from '@helpers/appWindow';
 
+let prefersReducedMotionQuery: MediaQueryList | undefined;
+function prefersReducedMotion() {
+  if(typeof window === 'undefined') {
+    return false;
+  }
+
+  prefersReducedMotionQuery ??= window.matchMedia('(prefers-reduced-motion: reduce)');
+  return prefersReducedMotionQuery.matches;
+}
+
 export type AnimationItemGroup = '' | 'none' | 'chat' | 'lock' |
   'STICKERS-POPUP' | 'emoticons-dropdown' | 'STICKERS-SEARCH' | 'GIFS-SEARCH' |
   `CHAT-MENU-REACTIONS-${number}` | 'INLINE-HELPER' | 'GENERAL-SETTINGS' | 'STICKER-VIEWER' | 'EMOJI' |
@@ -137,6 +147,13 @@ export class AnimationIntersector {
     idleController.addEventListener('change', (idle) => {
       this.checkAnimations2(idle);
     });
+
+    if(typeof window !== 'undefined') {
+      prefersReducedMotionQuery ??= window.matchMedia('(prefers-reduced-motion: reduce)');
+      prefersReducedMotionQuery.addEventListener('change', () => {
+        this.checkAnimations2(idleController.isIdle);
+      });
+    }
   }
 
   private createObserver() {
@@ -353,7 +370,8 @@ export class AnimationIntersector {
       this.visible.has(player) &&
       animation.autoplay &&
       (!this.onlyOnePlayableGroup || this.onlyOnePlayableGroup === group) &&
-      (!idleController.isIdle || this.overrideIdleGroups.has(player.group))
+      (!idleController.isIdle || this.overrideIdleGroups.has(player.group)) &&
+      !prefersReducedMotion()
     ) {
       // console.warn('play animation:', animation);
       safePlay(animation);

@@ -13,7 +13,6 @@ import makeError from '@helpers/makeError';
 import rootScope from '@lib/rootScope';
 import toArray from '@helpers/array/toArray';
 import lottieMessagePort from '@lib/lottie/lottieMessagePort';
-import SHOULD_RENDER_OFFSCREEN from '@lib/lottie/shouldRenderOffscreen';
 import tlottieWasmAssetUrl from '@vendor/tlottie/tlottie.wasm?url';
 import tlottieNoSimdWasmAssetUrl from '@vendor/tlottie/tlottie.nosimd.wasm?url';
 
@@ -150,14 +149,12 @@ export class LottieLoader {
       superMessagePort: lottieMessagePort
     });
 
-    if(SHOULD_RENDER_OFFSCREEN) {
-      // hidden-tab belt: SharedWorker timers are NOT tab-throttled - fully pause free-run clocks while
-      // hidden. Follow the active window: while popped out into a Document PiP window the PiP stays
-      // visible, so the players must keep running even though the tab we left is hidden.
-      bindActiveWindowListener((w) => w.document, 'visibilitychange', () => {
-        lottieMessagePort.suspendAllTabPlayers(getAppWindow().document.hidden);
-      });
-    }
+    // hidden-tab belt: SharedWorker timers are NOT tab-throttled - fully pause free-run clocks while
+    // hidden. Follow the active window: while popped out into a Document PiP window the PiP stays
+    // visible, so the players must keep running even though the tab we left is hidden.
+    bindActiveWindowListener((w) => w.document, 'visibilitychange', () => {
+      lottieMessagePort.suspendAllTabPlayers(getAppWindow().document.hidden);
+    });
   }
 
   public makeAssetUrl(name: LottieAssetName) {
