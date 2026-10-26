@@ -25,10 +25,13 @@ import assumeType from '@helpers/assumeType';
 import {IS_WEBM_SUPPORTED} from '@environment/videoSupport';
 import {observeResize, unobserveResize} from '@components/resizeObserver';
 import {CUSTOM_EMOJI_FADE_IN_DURATION, CUSTOM_EMOJI_FRAME_INTERVAL, PAID_REACTION_EMOJI_DOCID} from '@lib/customEmoji/constants';
+import {customEmojiRenderLoopNeedsTick} from '@lib/customEmoji/renderLoop';
+export {customEmojiRenderLoopNeedsTick} from '@lib/customEmoji/renderLoop';
 import lottieLoader from '@lib/lottie/lottieLoader';
 import StickerType from '@config/stickerType';
 import {Accessor, createEffect, createMemo, createRoot, createSignal, Setter} from 'solid-js';
 import readValue from '@helpers/solid/readValue';
+import {bindActiveWindowListener, getAppWindow} from '@helpers/appWindow';
 
 const globalLazyLoadQueue = new LazyLoadQueue();
 
@@ -1339,7 +1342,14 @@ const setRenderInterval = () => {
     return;
   }
 
-  emojiRenderInterval = window.setInterval(renderEmojis, CUSTOM_EMOJI_FRAME_INTERVAL);
+  emojiRenderInterval = window.setInterval(() => {
+    if(!customEmojiRenderLoopNeedsTick(liveEmojiRenderers())) {
+      clearRenderInterval();
+      return;
+    }
+
+    renderEmojis();
+  }, CUSTOM_EMOJI_FRAME_INTERVAL);
   renderEmojis();
 };
 const clearRenderInterval = () => {
@@ -1418,5 +1428,13 @@ const fadeInMediaAndCleanupThumbs = (el: HTMLElement) => {
 
 (window as any).syncedPlayers = syncedPlayers;
 (window as any).emojiRenderers = emojiRenderers;
+
+bindActiveWindowListener((w) => w.document, 'visibilitychange', () => {
+  if(getAppWindow().document.hidden) {
+    clearRenderInterval();
+  } else if(customEmojiRenderLoopNeedsTick(liveEmojiRenderers())) {
+    setRenderInterval();
+  }
+});
 
 customElements.define('custom-emoji-renderer-element', CustomEmojiRendererElement);
