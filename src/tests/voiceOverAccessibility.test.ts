@@ -41,6 +41,7 @@ vi.mock('@helpers/date', () => ({
 
 import {
   applyAttachButtonAccessibility,
+  applyArchiveDialogAccessibility,
   applyBubbleAccessibility,
   applyChatListAccessibility,
   applyComposerLandmark,
@@ -49,9 +50,13 @@ import {
   applyDialogRowHitTargets,
   applyFolderItemAccessibility,
   applyFoldersNavigationLandmark,
+  applyInputSearchAccessibility,
   applyMessageInputAccessibility,
   applyMessagesFeedLandmark,
   applySendButtonAccessibility,
+  applySidebarBackButtonAccessibility,
+  applySidebarSearchTriggerAccessibility,
+  applySidebarToolsButtonAccessibility,
   buildBubbleAccessibleName,
   buildDialogAccessibleName,
   countDialogRowAccessibilityTargets,
@@ -392,5 +397,61 @@ describe('voiceOver accessibility helpers', () => {
     applyFolderItemAccessibility(item, {title: 'work', selected: false});
     expect(item.getAttribute('aria-label')).toBe('work');
     expect(item.hasAttribute('aria-current')).toBe(false);
+  });
+
+  it('labels sidebar header controls for Voice Control', () => {
+    const back = document.createElement('div');
+    back.className = 'btn-icon sidebar-back-button';
+    applySidebarBackButtonAccessibility(back);
+    expect(back.getAttribute('aria-label')).toBe('SidebarBack');
+    expect(back.getAttribute('role')).toBe('button');
+    expect(back.tabIndex).toBe(0);
+
+    const tools = document.createElement('div');
+    tools.className = 'btn-menu-toggle sidebar-tools-button';
+    applySidebarToolsButtonAccessibility(tools);
+    expect(tools.getAttribute('aria-label')).toBe('SidebarMenu');
+    expect(tools.getAttribute('role')).toBe('button');
+
+    const searchTrigger = document.createElement('div');
+    searchTrigger.className = 'sidebar-header-search-trigger';
+    applySidebarSearchTriggerAccessibility(searchTrigger);
+    expect(searchTrigger.getAttribute('aria-label')).toBe('Search');
+
+    const inputSearch = {
+      input: document.createElement('input'),
+      clearBtn: document.createElement('button'),
+      searchIcon: document.createElement('span')
+    };
+    applyInputSearchAccessibility(inputSearch);
+    expect(inputSearch.input.getAttribute('aria-label')).toBe('Search');
+    expect(inputSearch.clearBtn.getAttribute('aria-label')).toBe('ClearButton');
+    expect(inputSearch.searchIcon.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('names the archive row for VoiceOver and Voice Control', () => {
+    const archive = document.createElement('archive-dialog');
+    archive.className = 'chatlist-chat row';
+    archive.innerHTML = `
+      <div class="row-media"></div>
+      <div class="row-row row-title-row"><span>Archived Chats</span></div>
+      <div class="row-row row-subtitle-row"><div class="Subtitle">Alice, Bob</div></div>
+    `;
+
+    applyArchiveDialogAccessibility(archive, {
+      title: 'ArchivedChats',
+      subtitle: 'Alice, Bob',
+      unreadCount: '2'
+    });
+
+    const link = dialogChatLink(archive);
+
+    expect(archive.getAttribute('role')).toBe('listitem');
+    expect(link).not.toBeNull();
+    expect(link.querySelector('.dialog-a11y-label')?.textContent).toContain('ArchivedChats');
+    expect(link.querySelector('.dialog-a11y-label')?.textContent).toContain('Alice, Bob');
+    expect(link.querySelector('.dialog-a11y-label')?.textContent).toContain('messages');
+    expect(archive.tabIndex).toBe(0);
+    expect(archive.querySelector('.row-title-row')?.getAttribute('aria-hidden')).toBe('true');
   });
 });
