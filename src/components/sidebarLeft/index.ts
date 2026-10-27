@@ -32,6 +32,7 @@ import noop from '@helpers/noop';
 import ripple from '@components/ripple';
 import indexOfAndSplice from '@helpers/array/indexOfAndSplice';
 import ListenerSetter from '@helpers/listenerSetter';
+import {addShortcutListener} from '@helpers/shortcutListener';
 import formatNumber from '@helpers/number/formatNumber';
 import {AppManagers} from '@lib/managers';
 import themeController from '@helpers/themeController';

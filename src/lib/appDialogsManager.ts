@@ -124,6 +124,7 @@ import confirmationPopup from '@components/confirmationPopup';
 import {
   attachDialogListPointerListeners
 } from '@helpers/dialogListPointerListeners';
+import ListenerSetter from '@helpers/listenerSetter';
 import type PopupPeer from '@components/popups/peer';
 import {toastNew} from '@components/toast';
 import {
@@ -3012,8 +3013,8 @@ export class AppDialogsManager {
       });
     }
 
-    listenerSetter.add(rootScope)('message_sent', ({tempMessage}) => {
-      if(tempMessage?.random_id === randomId) {
+    listenerSetter.add(rootScope)('message_sent', (e) => {
+      if(e.tempMessage?.random_id === randomId) {
         popup?.hide();
         onSent();
       }

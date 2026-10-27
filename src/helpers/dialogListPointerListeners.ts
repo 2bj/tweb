@@ -93,6 +93,14 @@ export function attachDialogListPointerListeners({
     }
 
     cancelEvent(e);
-    handleListActivation(e);
+    handleListActivation({
+      target: e.target,
+      button: 0,
+      shiftKey: e.shiftKey,
+      ctrlKey: e.ctrlKey,
+      metaKey: e.metaKey,
+      clientX: 0,
+      clientY: 0
+    });
   }, {capture: true});
 }
